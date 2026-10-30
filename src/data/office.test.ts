@@ -3,7 +3,8 @@ import { project } from '../core/iso'
 import { findBrokenLinks, findUnreachable } from '../core/travel'
 import { DESK_SET, PORTAL_SIZE, type Furniture } from './furniture'
 import { MAPS, START_MAP } from './maps'
-import { FLOOR_COLORS, SCREEN, TILE, buildFloorCells, floorKindAt, type Rect } from './office'
+import { FLOOR_COLORS, SCREEN, TILE, buildFloorCells, floorKindAt, mapTitle, type Rect } from './office'
+import { RANKS } from './ranks'
 
 const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.d && b.y < a.y + a.d
 
@@ -26,6 +27,18 @@ describe('맵 사이의 연결', () => {
       expect(targets.length, map.id).toBeGreaterThanOrEqual(2)
       expect(new Set(targets).size, map.id).toBe(targets.length)
     }
+  })
+})
+
+describe('맵 이름', () => {
+  it('"1층 회사 정문"처럼 층과 맵 이름으로 쓴다', () => {
+    expect(mapTitle({ storey: 1, name: '회사 정문' })).toBe('1층 회사 정문')
+  })
+
+  // 임원실은 장소 이름이라 '임원'이 들어가도 된다. 직급 자체를 맵 이름으로 쓰지 않으면 된다.
+  it('직급을 맵 이름으로 쓰지 않는다', () => {
+    const rankNames = RANKS.map((rank) => rank.name)
+    for (const map of MAPS) expect(rankNames, map.id).not.toContain(map.name)
   })
 })
 

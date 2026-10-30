@@ -1,5 +1,7 @@
-import { FLOOR_LABEL, SCREEN, type GameMap, type MapId } from '../data/office'
+import type { Gauge, Profile } from '../core/profile'
+import { SCREEN, mapTitle, type GameMap, type MapId } from '../data/office'
 import type { PortalSign } from '../game/OfficeScene'
+import { createPortrait } from './portrait'
 
 const toCssColor = (color: number) => `#${color.toString(16).padStart(6, '0')}`
 
@@ -30,19 +32,53 @@ function portalButton(sign: PortalSign, onTravel: (to: MapId) => void) {
   return button
 }
 
-export function mountHud(parent: HTMLElement, onTravel: (to: MapId) => void) {
-  const label = document.createElement('div')
-  label.className = 'floor-label'
-  label.dataset.testid = 'floor-label'
-  label.textContent = FLOOR_LABEL
+function gaugeBar(kind: 'hp' | 'mp', title: string, gauge: Gauge) {
+  const bar = document.createElement('div')
+  bar.className = `gauge gauge-${kind}`
+  bar.dataset.testid = `profile-${kind}`
+  const fill = document.createElement('div')
+  fill.className = 'gauge-fill'
+  fill.style.width = `${(gauge.current / gauge.max) * 100}%`
+  const text = document.createElement('span')
+  text.className = 'gauge-text'
+  text.textContent = `${title} ${gauge.current}/${gauge.max}`
+  bar.append(fill, text)
+  return bar
+}
 
+function profilePanel(profile: Profile) {
+  const panel = document.createElement('div')
+  panel.className = 'profile'
+  panel.dataset.testid = 'profile'
+
+  const rank = document.createElement('span')
+  rank.className = 'profile-rank'
+  rank.dataset.testid = 'profile-rank'
+  rank.textContent = profile.rankName
+  const level = document.createElement('span')
+  level.className = 'profile-level'
+  level.dataset.testid = 'profile-level'
+  level.textContent = `Lv.${profile.level}`
+  const heading = document.createElement('div')
+  heading.className = 'profile-heading'
+  heading.append(rank, level)
+
+  const details = document.createElement('div')
+  details.className = 'profile-details'
+  details.append(heading, gaugeBar('hp', 'HP', profile.hp), gaugeBar('mp', 'MP', profile.mp))
+
+  panel.append(createPortrait(), details)
+  return panel
+}
+
+export function mountHud(parent: HTMLElement, profile: Profile, onTravel: (to: MapId) => void) {
   const mapName = document.createElement('div')
   mapName.className = 'map-name'
   mapName.dataset.testid = 'map-name'
 
   const signLayer = document.createElement('div')
   signLayer.className = 'portal-layer'
-  parent.append(signLayer, label, mapName)
+  parent.append(signLayer, profilePanel(profile), mapName)
 
   let signs: { sign: PortalSign; button: HTMLButtonElement }[] = []
   let cameraX = 0
@@ -65,7 +101,7 @@ export function mountHud(parent: HTMLElement, onTravel: (to: MapId) => void) {
 
   return {
     showMap(map: GameMap, nextSigns: PortalSign[]) {
-      mapName.textContent = map.name
+      mapName.textContent = mapTitle(map)
       signLayer.replaceChildren()
       signs = nextSigns.map((sign) => ({ sign, button: portalButton(sign, onTravel) }))
       signLayer.append(...signs.map((s) => s.button))

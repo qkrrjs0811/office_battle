@@ -22,26 +22,77 @@
       canvas {
         touch-action: none;
       }
-      .floor-label {
+      .profile {
         position: absolute;
-        top: 14px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 6px 16px;
-        border-radius: 6px;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 196px;
+        box-sizing: border-box;
+        padding: 6px 10px 6px 6px;
+        border-radius: 10px;
         background: #2f3640;
         color: #fff;
-        font: 700 18px/1.3 sans-serif;
-        white-space: nowrap;
+        font: 700 13px/1.2 sans-serif;
         pointer-events: none;
+      }
+      .profile-portrait {
+        flex: none;
+        width: 60px;
+        height: 68px;
+        border-radius: 8px;
+        background: #e6ebf0;
+      }
+      .profile-details {
+        flex: 1;
+        min-width: 0;
+      }
+      .profile-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 4px;
+      }
+      .profile-rank {
+        font-size: 16px;
+      }
+      .profile-level {
+        color: #f5d76e;
+      }
+      .gauge {
+        position: relative;
+        height: 18px;
+        margin-top: 3px;
+        border-radius: 5px;
+        background: #171b21;
+        overflow: hidden;
+      }
+      .gauge-fill {
+        height: 100%;
+      }
+      .gauge-hp .gauge-fill {
+        background: #d8453e;
+      }
+      .gauge-mp .gauge-fill {
+        background: #3f7fd1;
+      }
+      .gauge-text {
+        position: absolute;
+        inset: 0;
+        font-size: 12px;
+        line-height: 18px;
+        text-align: center;
       }
       .map-name {
         position: absolute;
-        top: 56px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 4px 14px;
-        border-radius: 6px;
+        top: 10px;
+        right: 10px;
+        max-width: 164px;
+        box-sizing: border-box;
+        padding: 6px 12px;
+        border-radius: 8px;
         background: #fff;
         color: #2f3640;
         font: 700 15px/1.3 sans-serif;

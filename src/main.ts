@@ -1,9 +1,11 @@
+import { createCareer } from './core/career'
+import { buildProfile } from './core/profile'
 import { createGame } from './game/createGame'
 import { mountHud } from './ui/hud'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.dataset.testid = 'app'
-const hud = mountHud(app, (to) => game.travelTo(to))
+const hud = mountHud(app, buildProfile(createCareer()), (to) => game.travelTo(to))
 const game = createGame(app, {
   onMapShown: (map, signs) => {
     delete app.dataset.map

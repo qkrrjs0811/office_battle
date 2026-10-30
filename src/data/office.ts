@@ -5,8 +5,6 @@ import type { Furniture } from './furniture'
 
 export const SCREEN = { width: 390, height: 844 }
 
-export const FLOOR_LABEL = '1층 · 인턴'
-
 export const TILE: Tile = { halfWidth: 22, halfHeight: 11, zUnit: 22 }
 
 export type Rect = { x: number; y: number; w: number; d: number }
@@ -18,6 +16,7 @@ export type Portal = { to: MapId; x: number; y: number; alongX: boolean }
 export type GameMap = {
   id: MapId
   name: string
+  storey: number
   width: number
   depth: number
   floor: FloorKind
@@ -28,6 +27,8 @@ export type GameMap = {
   portals: Portal[]
   furniture: Furniture[]
 }
+
+export const mapTitle = (map: Pick<GameMap, 'storey' | 'name'>) => `${map.storey}층 ${map.name}`
 
 export const ISLAND_SHADOW = { color: 0x1d2a24, alpha: 0.16, offsetY: 34 }
 export const OBJECT_SHADOW = { color: 0x2a2018, alpha: 0.13, spread: 0.18 }

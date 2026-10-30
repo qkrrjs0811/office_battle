@@ -33,6 +33,13 @@ const expectFullyOnScreen = async (button: Locator) => {
   expect(box.y + box.height).toBeLessThanOrEqual(SCREEN.height)
 }
 
+type Box = { x: number; y: number; width: number; height: number }
+
+const expectApart = (a: Box, b: Box) => {
+  const overlap = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+  expect(overlap).toBe(false)
+}
+
 // 맵을 끌어 이름표를 화면 가운데로 데려온다. 빈 곳(화면 아래쪽)에서 잡아 끈다.
 const bringIntoView = async (page: Page, button: Locator) => {
   for (let i = 0; i < 4; i++) {
@@ -46,8 +53,7 @@ const bringIntoView = async (page: Page, button: Locator) => {
 
 test('폰 크기 화면에 블록 사무실 맵이 그려진다', async ({ page }) => {
   await openMap(page)
-  await expect(page.getByTestId('floor-label')).toHaveText('1층 · 인턴')
-  await expect(page.getByTestId('map-name')).toHaveText('업무 구역')
+  await expect(page.getByTestId('map-name')).toHaveText('1층 업무 구역')
 
   // 화면 맞춤 계산에서 1px 미만의 소수점 오차가 난다
   const canvas = (await page.locator('canvas').boundingBox())!
@@ -70,6 +76,40 @@ test('폰 크기 화면에 블록 사무실 맵이 그려진다', async ({ page 
     return seen.size
   }, shot.toString('base64'))
   expect(colors).toBeGreaterThan(30)
+})
+
+test('왼쪽 위 프로필에 얼굴, 직급, 레벨, HP, MP가 보이고 맵 이름과 나뉘어 있다', async ({ page }) => {
+  await openMap(page)
+  await expect(page.getByTestId('profile-rank')).toHaveText('인턴')
+  await expect(page.getByTestId('profile-level')).toHaveText('Lv.1')
+  await expect(page.getByTestId('profile-hp')).toHaveText('HP 100/100')
+  await expect(page.getByTestId('profile-mp')).toHaveText('MP 30/30')
+  await expect(page.getByTestId('map-name')).not.toContainText('인턴')
+
+  const profile = (await page.getByTestId('profile').boundingBox())!
+  const mapName = (await page.getByTestId('map-name').boundingBox())!
+  const portrait = (await page.getByTestId('profile-portrait').boundingBox())!
+  expect(portrait.width).toBeGreaterThan(40)
+  expect(profile.x).toBeLessThan(SCREEN.width / 2)
+  expectApart(profile, mapName)
+  expect(mapName.x + mapName.width).toBeLessThanOrEqual(SCREEN.width)
+
+  // 글자가 칸 밖으로 넘치지 않는다
+  const overflowing = await page.evaluate(() =>
+    ['map-name', 'profile-hp', 'profile-mp', 'profile-rank']
+      .map((id) => document.querySelector<HTMLElement>(`[data-testid="${id}"]`)!)
+      .filter((el) => el.scrollWidth > el.clientWidth + 1)
+      .map((el) => el.dataset.testid),
+  )
+  expect(overflowing).toEqual([])
+
+  // 프로필 위를 끌어도 맵이 움직인다
+  const start = await camera(page)
+  const y = profile.y + profile.height / 2
+  await drag(page, [profile.x + 100, y], [profile.x + 40, y])
+  expect((await camera(page)).x).toBe(start.x + 60)
+
+  await page.screenshot({ path: 'test-results/screens/profile.png', clip: { x: 0, y: 0, width: SCREEN.width, height: 110 } })
 })
 
 test('끌어서 맵의 다른 곳을 둘러보고, 맵 끝 밖으로는 나가지 않는다', async ({ page }) => {
@@ -129,11 +169,15 @@ test('포탈로 맵 다섯 곳을 한 바퀴 돌아 제자리로 온다', async 
     await portal.click()
 
     await expect(page.getByTestId('app')).toHaveAttribute('data-map', to)
-    await expect(page.getByTestId('map-name')).toHaveText(name)
+    await expect(page.getByTestId('map-name')).toHaveText(`1층 ${name}`)
     await nextFrames(page)
 
-    // 도착하면 돌아가는 포탈이 끌지 않아도 화면 안에 있다
-    await expectFullyOnScreen(page.getByTestId(`portal-${back}`))
+    // 도착하면 돌아가는 포탈이 끌지 않아도 화면 안에 있고, 프로필과 맵 이름에 가려지지 않는다
+    const backPortal = page.getByTestId(`portal-${back}`)
+    await expectFullyOnScreen(backPortal)
+    const backBox = (await backPortal.boundingBox())!
+    expectApart(backBox, (await page.getByTestId('profile').boundingBox())!)
+    expectApart(backBox, (await page.getByTestId('map-name').boundingBox())!)
     await page.screenshot({ path: `test-results/screens/map-${to}.png` })
 
     // 맵마다 바탕색이 다르다. 빈 구석 한 점으로 확인한다

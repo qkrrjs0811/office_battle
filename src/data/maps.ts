@@ -62,6 +62,7 @@ export const MAPS: GameMap[] = [
   build({
     id: 'work',
     name: '업무 구역',
+    storey: 1,
     width: 16,
     depth: 16,
     floor: 'carpet',
@@ -82,6 +83,7 @@ export const MAPS: GameMap[] = [
   build({
     id: 'meeting',
     name: '회의실',
+    storey: 1,
     width: 18,
     depth: 14,
     floor: 'wood',
@@ -105,6 +107,7 @@ export const MAPS: GameMap[] = [
   build({
     id: 'lounge',
     name: '휴게실',
+    storey: 1,
     width: 14,
     depth: 18,
     floor: 'mint',
@@ -137,6 +140,7 @@ export const MAPS: GameMap[] = [
   build({
     id: 'archive',
     name: '자료실',
+    storey: 1,
     width: 16,
     depth: 16,
     floor: 'concrete',
@@ -160,6 +164,7 @@ export const MAPS: GameMap[] = [
   build({
     id: 'executive',
     name: '임원실',
+    storey: 1,
     width: 18,
     depth: 16,
     floor: 'darkWood',
