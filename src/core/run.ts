@@ -2,11 +2,13 @@ import { PERFORMANCE, type EnemyStats, type StatName } from '../data/ranks'
 import {
   buyItem,
   canChallengeBoss,
+  claimQuest,
   createCareer,
   currentRank,
   effectiveStats,
   loseFight,
   trainStat,
+  visitMap,
   winAgainstBoss,
   winAgainstEmployee,
   type Career,
@@ -20,6 +22,10 @@ export type Pilot = {
   train: (career: Career) => StatName | null
   // 월급으로 살 매점 물건. 없거나 null이면 사지 않는다
   buy?: (career: Career) => string | null
+  // 들를 맵. 없거나 null이면 돌아다니지 않는다
+  visit?: (career: Career) => string | null
+  // 보상을 받을 퀘스트. 없거나 null이면 받지 않는다
+  claim?: (career: Career) => string | null
 }
 
 export type Opponent = { kind: 'employee' | 'boss'; name: string; stats: EnemyStats }
@@ -43,6 +49,18 @@ export const nextOpponent = (career: Career): Opponent => {
   return canChallengeBoss(career)
     ? { kind: 'boss', name: rank.bossName, stats: rank.boss }
     : { kind: 'employee', name: rank.employeeName, stats: rank.employee }
+}
+
+const visitAll = (career: Career, pilot: Pilot): Career => {
+  let next = career
+  for (let mapId = pilot.visit?.(next); mapId; mapId = pilot.visit?.(next)) next = visitMap(next, mapId)
+  return next
+}
+
+const claimAll = (career: Career, pilot: Pilot): Career => {
+  let next = career
+  for (let questId = pilot.claim?.(next); questId; questId = pilot.claim?.(next)) next = claimQuest(next, questId)
+  return next
 }
 
 const buyAll = (career: Career, pilot: Pilot): Career => {
@@ -85,9 +103,11 @@ export const runCareer = (pilot: Pilot, seed: number, maxFights = DEFAULT_MAX_FI
   let career = createCareer()
   const log: FightLog[] = []
   while (!career.ruling && log.length < maxFights) {
-    const result = fightNext(buyAll(trainAll(career, pilot), pilot), pilot, seed + log.length)
+    const ready = buyAll(trainAll(claimAll(visitAll(career, pilot), pilot), pilot), pilot)
+    const result = fightNext(ready, pilot, seed + log.length)
     career = result.career
     log.push(result.log)
   }
-  return { career, log }
+  // 마지막 보스를 이겨 깬 퀘스트까지 받는다
+  return { career: claimAll(career, pilot), log }
 }

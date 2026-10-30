@@ -9,6 +9,7 @@ import {
   type Stats,
 } from '../data/ranks'
 import { fightReward, gainXp, levelBonus } from './growth'
+import { advanceQuests, questEntry } from './quests'
 
 // 한 플레이어의 회사 생활. 저장하기 쉽게 그대로 JSON이 되는 값만 둔다.
 export type Career = {
@@ -21,6 +22,9 @@ export type Career = {
   money: number
   employeesBeaten: number
   ruling: boolean
+  // 퀘스트 아이디별 진행도. 지거나 승진해도 줄지 않는다
+  questProgress: Record<string, number>
+  claimedQuestIds: string[]
 }
 
 const STAT_NAMES: StatName[] = ['hp', 'attack', 'defense']
@@ -51,6 +55,8 @@ export const createCareer = (): Career => ({
   money: 0,
   employeesBeaten: 0,
   ruling: false,
+  questProgress: {},
+  claimedQuestIds: [],
 })
 
 export const currentRank = (career: Career): Rank => RANKS[career.rankIndex]
@@ -73,7 +79,7 @@ export const winAgainstEmployee = (career: Career): Career => {
   if (employeesLeft(career) === 0) throw new Error('이 층에 남은 직원이 없다')
   return collectReward(
     {
-      ...career,
+      ...advanceQuests(career, { kind: 'employeeWin' }),
       employeesBeaten: career.employeesBeaten + 1,
       performance: career.performance + PERFORMANCE.perEmployeeWin,
     },
@@ -89,7 +95,7 @@ export const winAgainstBoss = (career: Career): Career => {
   const isLastFloor = career.rankIndex === RANKS.length - 1
   return collectReward(
     {
-      ...career,
+      ...advanceQuests(career, { kind: 'bossWin' }),
       rankIndex: isLastFloor ? career.rankIndex : career.rankIndex + 1,
       stats: addStats(career.stats, rank.promotionBonus),
       equipmentIds: [...career.equipmentIds, rank.bossDrop.id],
@@ -106,7 +112,7 @@ export const loseFight = (career: Career): Career => {
   assertPlaying(career)
   return collectReward(
     {
-      ...career,
+      ...advanceQuests(career, { kind: 'loss' }),
       employeesBeaten: 0,
       performance: career.performance + PERFORMANCE.perLoss,
     },
@@ -118,7 +124,7 @@ export const trainStat = (career: Career, stat: StatName): Career => {
   assertPlaying(career)
   if (career.performance < PERFORMANCE.trainCost) throw new Error('실적이 모자란다')
   return {
-    ...career,
+    ...advanceQuests(career, { kind: 'train' }),
     stats: { ...career.stats, [stat]: career.stats[stat] + TRAIN_GAIN[stat] },
     performance: career.performance - PERFORMANCE.trainCost,
   }
@@ -131,8 +137,27 @@ export const buyItem = (career: Career, itemId: string): Career => {
   if (career.equipmentIds.includes(item.id)) throw new Error('이미 산 장비다')
   if (career.money < item.price) throw new Error('월급이 모자란다')
   return {
-    ...career,
+    ...advanceQuests(career, { kind: 'buy' }),
     equipmentIds: [...career.equipmentIds, item.id],
     money: career.money - item.price,
   }
+}
+
+// 맵에 들른 것을 퀘스트에 센다. 회사를 지배한 뒤에도 돌아다닐 수 있다.
+export const visitMap = (career: Career, mapId: string): Career => advanceQuests(career, { kind: 'visit', mapId })
+
+// 깬 퀘스트의 보상을 받는다. 마지막 보스 퀘스트는 지배한 뒤에 받으므로 판이 끝나도 받을 수 있다.
+export const claimQuest = (career: Career, questId: string): Career => {
+  const { quest, status } = questEntry(career, questId)
+  if (status === 'claimed') throw new Error('이미 받은 보상이다')
+  if (status !== 'done') throw new Error('아직 깨지 못한 퀘스트다')
+  const { xp, money, performance } = quest.reward
+  return collectReward(
+    {
+      ...career,
+      performance: career.performance + performance,
+      claimedQuestIds: [...career.claimedQuestIds, quest.id],
+    },
+    { xp, money },
+  )
 }
