@@ -183,6 +183,9 @@ test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 온다', async 
     const backBox = (await backPortal.boundingBox())!
     expectApart(backBox, (await page.getByTestId('profile').boundingBox())!)
     expectApart(backBox, (await page.getByTestId('map-name').boundingBox())!)
+    expectApart(backBox, (await page.getByTestId('wallet').boundingBox())!)
+    expectApart(backBox, (await page.getByTestId('menu-quest').boundingBox())!)
+    expectApart(backBox, (await page.getByTestId('menu-train').boundingBox())!)
     await page.screenshot({ path: `test-results/screens/map-${to}.png` })
 
     // 맵마다 바탕색이 다르다. 빈 구석 한 점으로 확인한다

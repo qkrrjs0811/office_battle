@@ -2,10 +2,10 @@ import type { Gauge, Profile } from '../core/profile'
 import { SCREEN, mapTitle, type GameMap, type MapId } from '../data/office'
 import type { PortalSign } from '../game/OfficeScene'
 import { createPortrait } from './portrait'
+import { onPress } from './press'
 
 const toCssColor = (color: number) => `#${color.toString(16).padStart(6, '0')}`
 
-// 끌다가 손을 뗀 것과 구분하려고, 같은 버튼 안에서 눌렀다 뗐을 때만 이동한다.
 function portalButton(sign: PortalSign, onTravel: (to: MapId) => void) {
   const button = document.createElement('button')
   button.type = 'button'
@@ -13,26 +13,11 @@ function portalButton(sign: PortalSign, onTravel: (to: MapId) => void) {
   button.dataset.testid = `portal-${sign.to}`
   button.textContent = `→ ${sign.label}`
   button.style.borderColor = toCssColor(sign.accent)
-  let armed = false
-  button.addEventListener('pointerdown', (event) => {
-    armed = true
-    // 터치는 손가락을 따라 버튼에 묶인다. 풀어야 밖으로 나갔을 때 pointerleave가 온다.
-    if (button.hasPointerCapture(event.pointerId)) button.releasePointerCapture(event.pointerId)
-  })
-  button.addEventListener('pointerleave', () => {
-    armed = false
-  })
-  button.addEventListener('pointercancel', () => {
-    armed = false
-  })
-  button.addEventListener('pointerup', () => {
-    if (armed) onTravel(sign.to)
-    armed = false
-  })
+  onPress(button, () => onTravel(sign.to))
   return button
 }
 
-function gaugeBar(kind: 'hp' | 'mp', title: string, gauge: Gauge) {
+function gaugeBar(kind: 'hp' | 'mp' | 'xp', title: string, gauge: Gauge) {
   const bar = document.createElement('div')
   bar.className = `gauge gauge-${kind}`
   bar.dataset.testid = `profile-${kind}`
@@ -65,10 +50,23 @@ function profilePanel(profile: Profile) {
 
   const details = document.createElement('div')
   details.className = 'profile-details'
-  details.append(heading, gaugeBar('hp', 'HP', profile.hp), gaugeBar('mp', 'MP', profile.mp))
+  details.append(
+    heading,
+    gaugeBar('hp', 'HP', profile.hp),
+    gaugeBar('mp', 'MP', profile.mp),
+    gaugeBar('xp', 'XP', profile.xp),
+  )
 
   panel.append(createPortrait(), details)
   return panel
+}
+
+function walletChip(testId: string, text: string) {
+  const chip = document.createElement('span')
+  chip.className = 'wallet-chip'
+  chip.dataset.testid = testId
+  chip.textContent = text
+  return chip
 }
 
 export function mountHud(parent: HTMLElement, profile: Profile, onTravel: (to: MapId) => void) {
@@ -76,9 +74,26 @@ export function mountHud(parent: HTMLElement, profile: Profile, onTravel: (to: M
   mapName.className = 'map-name'
   mapName.dataset.testid = 'map-name'
 
+  const wallet = document.createElement('div')
+  wallet.className = 'wallet'
+  wallet.dataset.testid = 'wallet'
+
+  const corner = document.createElement('div')
+  corner.className = 'corner'
+  corner.append(mapName, wallet)
+
+  let panel = profilePanel(profile)
+  const showProfile = (next: Profile) => {
+    const nextPanel = profilePanel(next)
+    panel.replaceWith(nextPanel)
+    panel = nextPanel
+    wallet.replaceChildren(walletChip('wallet-money', `월급 ${next.money}`), walletChip('wallet-performance', `실적 ${next.performance}`))
+  }
+
   const signLayer = document.createElement('div')
   signLayer.className = 'portal-layer'
-  parent.append(signLayer, profilePanel(profile), mapName)
+  parent.append(signLayer, panel, corner)
+  showProfile(profile)
 
   let signs: { sign: PortalSign; button: HTMLButtonElement }[] = []
   let cameraX = 0
@@ -100,6 +115,7 @@ export function mountHud(parent: HTMLElement, profile: Profile, onTravel: (to: M
   window.addEventListener('resize', placeSigns)
 
   return {
+    showProfile,
     showMap(map: GameMap, nextSigns: PortalSign[]) {
       mapName.textContent = mapTitle(map)
       signLayer.replaceChildren()

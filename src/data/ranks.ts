@@ -3,6 +3,8 @@ export type Stats = { hp: number; attack: number; defense: number }
 
 export type StatName = keyof Stats
 
+export const STAT_LABELS: Record<StatName, string> = { hp: '체력', attack: '공격', defense: '방어' }
+
 export type Equipment = { id: string; name: string; bonus: Partial<Stats> }
 
 export type EnemyStats = {
