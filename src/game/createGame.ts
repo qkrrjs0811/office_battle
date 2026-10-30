@@ -1,9 +1,10 @@
 import Phaser from 'phaser'
-import { SCREEN } from '../data/office'
-import { OfficeScene } from './OfficeScene'
+import { SCREEN, type MapId } from '../data/office'
+import { OfficeScene, type SceneEvents } from './OfficeScene'
 
-export function createGame(parent: HTMLElement, onReady: () => void, onCameraMove: (x: number, y: number) => void) {
-  return new Phaser.Game({
+export function createGame(parent: HTMLElement, events: SceneEvents) {
+  const scene = new OfficeScene(events)
+  new Phaser.Game({
     type: Phaser.AUTO,
     parent,
     width: SCREEN.width,
@@ -11,6 +12,7 @@ export function createGame(parent: HTMLElement, onReady: () => void, onCameraMov
     antialias: true,
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     banner: false,
-    scene: new OfficeScene(onReady, onCameraMove),
+    scene,
   })
+  return { travelTo: (to: MapId) => scene.travelTo(to) }
 }

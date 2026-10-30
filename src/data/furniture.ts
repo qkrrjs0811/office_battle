@@ -39,6 +39,7 @@ export const PALETTE = {
   glass: 0xbfe3ee,
   frame: 0xf7f7f5,
   curb: 0xd8cdb8,
+  portalFrame: 0x3a3f4b,
 }
 
 const b = (x: number, y: number, z: number, w: number, d: number, h: number, color: number, alpha?: number): Block => ({
@@ -205,6 +206,29 @@ export function execDesk(x: number, y: number): Furniture {
 
 export function rug(x: number, y: number, w: number, d: number): Furniture {
   return item('양탄자', x, y, w, d, [b(x, y, 0, w, d, 0.04, PALETTE.rug)])
+}
+
+export const PORTAL_SIZE = { span: 2.6, depth: 0.6 }
+
+// 벽에 붙여 세우는 포탈. 빛나는 면이 방 안쪽을 보고, 색으로 어디로 가는지 알린다.
+export function portalGate(x: number, y: number, alongX: boolean, glow: number): Furniture {
+  const { span, depth } = PORTAL_SIZE
+  const post = 0.3
+  const height = 2.6
+  const blocks = alongX
+    ? [
+        b(x, y, 0, post, depth, height, PALETTE.portalFrame),
+        b(x + span - post, y, 0, post, depth, height, PALETTE.portalFrame),
+        b(x + post, y + 0.15, 0, span - post * 2, 0.3, height - 0.3, glow),
+        b(x, y, height, span, depth, 0.3, PALETTE.portalFrame),
+      ]
+    : [
+        b(x, y, 0, depth, post, height, PALETTE.portalFrame),
+        b(x, y + span - post, 0, depth, post, height, PALETTE.portalFrame),
+        b(x + 0.15, y + post, 0, 0.3, span - post * 2, height - 0.3, glow),
+        b(x, y, height, depth, span, 0.3, PALETTE.portalFrame),
+      ]
+  return item('포탈', x, y, alongX ? span : depth, alongX ? depth : span, blocks)
 }
 
 const WALL_THICKNESS = 0.3

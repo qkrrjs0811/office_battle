@@ -1,4 +1,6 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
+
+const SCREEN = { width: 390, height: 844 }
 
 const nextFrames = (page: Page) =>
   page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))))
@@ -17,10 +19,35 @@ const drag = async (page: Page, from: [number, number], to: [number, number]) =>
   await nextFrames(page)
 }
 
-test('폰 크기 화면에 블록 사무실 층이 그려진다', async ({ page }) => {
+const openMap = async (page: Page) => {
   await page.goto('/')
-  await expect(page.getByTestId('app')).toHaveAttribute('data-scene', 'office')
+  await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'work')
+  await nextFrames(page)
+}
+
+const expectFullyOnScreen = async (button: Locator) => {
+  const box = (await button.boundingBox())!
+  expect(box.x).toBeGreaterThanOrEqual(0)
+  expect(box.y).toBeGreaterThanOrEqual(0)
+  expect(box.x + box.width).toBeLessThanOrEqual(SCREEN.width)
+  expect(box.y + box.height).toBeLessThanOrEqual(SCREEN.height)
+}
+
+// 맵을 끌어 이름표를 화면 가운데로 데려온다. 빈 곳(화면 아래쪽)에서 잡아 끈다.
+const bringIntoView = async (page: Page, button: Locator) => {
+  for (let i = 0; i < 4; i++) {
+    const box = (await button.boundingBox())!
+    const dx = SCREEN.width / 2 - (box.x + box.width / 2)
+    if (Math.abs(dx) < 60) return
+    const reach = Math.max(-150, Math.min(150, dx))
+    await drag(page, [195, 800], [195 + reach, 800])
+  }
+}
+
+test('폰 크기 화면에 블록 사무실 맵이 그려진다', async ({ page }) => {
+  await openMap(page)
   await expect(page.getByTestId('floor-label')).toHaveText('1층 · 인턴')
+  await expect(page.getByTestId('map-name')).toHaveText('업무 구역')
 
   // 화면 맞춤 계산에서 1px 미만의 소수점 오차가 난다
   const canvas = (await page.locator('canvas').boundingBox())!
@@ -29,8 +56,6 @@ test('폰 크기 화면에 블록 사무실 층이 그려진다', async ({ page 
   expect(canvas.width).toBeCloseTo(390, 0)
   expect(canvas.height).toBeCloseTo(844, 0)
 
-  // 첫 프레임이 그려질 때까지 기다린 뒤 찍는다
-  await nextFrames(page)
   const shot = await page.screenshot({ path: 'test-results/screens/office.png' })
 
   // 캔버스가 비어 있으면 색이 한두 개뿐이다. 바닥·벽·가구 색이 실제로 찍혔는지 본다.
@@ -47,28 +72,79 @@ test('폰 크기 화면에 블록 사무실 층이 그려진다', async ({ page 
   expect(colors).toBeGreaterThan(30)
 })
 
-test('끌어서 맵의 다른 구역을 둘러본다', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.getByTestId('app')).toHaveAttribute('data-scene', 'office')
-  await nextFrames(page)
+test('끌어서 맵의 다른 곳을 둘러보고, 맵 끝 밖으로는 나가지 않는다', async ({ page }) => {
+  await openMap(page)
 
   const start = await camera(page)
-  await drag(page, [200, 700], [200, 200])
-  const moved = await camera(page)
-  expect(moved.y).toBeGreaterThan(start.y + 100)
-  await page.screenshot({ path: 'test-results/screens/office-lounge.png' })
+  await drag(page, [195, 800], [95, 800])
+  expect((await camera(page)).x).toBe(start.x + 100)
+  await page.screenshot({ path: 'test-results/screens/office-right.png' })
 
-  await drag(page, [300, 700], [40, 200])
-  await drag(page, [300, 700], [40, 200])
-  const further = await camera(page)
-  expect(further.x).toBeGreaterThan(moved.x)
-  expect(further.y).toBeGreaterThanOrEqual(moved.y)
-  await page.screenshot({ path: 'test-results/screens/office-executive.png' })
-
-  // 맵 끝을 넘어가도 카메라가 빈 곳으로 나가지 않는다
-  for (let i = 0; i < 5; i++) await drag(page, [40, 200], [380, 800])
+  for (let i = 0; i < 6; i++) await drag(page, [40, 800], [380, 800])
   const corner = await camera(page)
+  expect(corner.x).toBe(0)
   expect(corner.y).toBeGreaterThanOrEqual(0)
-  expect(corner.x).toBeGreaterThanOrEqual(0)
-  await page.screenshot({ path: 'test-results/screens/office-top.png' })
+  await page.screenshot({ path: 'test-results/screens/office-left.png' })
+})
+
+test('포탈 이름표를 지나가며 끌어도 맵이 끊기지 않고, 이동하지도 않는다', async ({ page }) => {
+  await openMap(page)
+  const box = (await page.getByTestId('portal-meeting').boundingBox())!
+  const y = box.y + box.height / 2
+  const startX = box.x + box.width + 40
+  const start = await camera(page)
+  await drag(page, [startX, y], [startX - 120, y])
+  expect((await camera(page)).x).toBe(start.x + 120)
+  await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'work')
+})
+
+test('이름표에서 누른 뒤 밖에서 떼면 이동하지 않는다', async ({ page }) => {
+  await openMap(page)
+  const box = (await page.getByTestId('portal-meeting').boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2, box.y + 200, { steps: 4 })
+  await page.mouse.up()
+  await nextFrames(page)
+  await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'work')
+})
+
+test('포탈로 맵 다섯 곳을 한 바퀴 돌아 제자리로 온다', async ({ page }) => {
+  await openMap(page)
+  const route = [
+    ['meeting', '회의실', 'work'],
+    ['executive', '임원실', 'meeting'],
+    ['archive', '자료실', 'executive'],
+    ['lounge', '휴게실', 'archive'],
+    ['work', '업무 구역', 'lounge'],
+  ] as const
+
+  const backgrounds = new Set<string>()
+  for (const [to, name, back] of route) {
+    const portal = page.getByTestId(`portal-${to}`)
+    await bringIntoView(page, portal)
+    const box = (await portal.boundingBox())!
+    expect(box.height).toBeGreaterThanOrEqual(44)
+    expect(box.width).toBeGreaterThanOrEqual(44)
+    await portal.click()
+
+    await expect(page.getByTestId('app')).toHaveAttribute('data-map', to)
+    await expect(page.getByTestId('map-name')).toHaveText(name)
+    await nextFrames(page)
+
+    // 도착하면 돌아가는 포탈이 끌지 않아도 화면 안에 있다
+    await expectFullyOnScreen(page.getByTestId(`portal-${back}`))
+    await page.screenshot({ path: `test-results/screens/map-${to}.png` })
+
+    // 맵마다 바탕색이 다르다. 빈 구석 한 점으로 확인한다
+    const shot = await page.screenshot({ clip: { x: 0, y: SCREEN.height - 2, width: 2, height: 2 } })
+    backgrounds.add(shot.toString('base64'))
+
+    // 다시 시작한 장면에서 끌기가 두 번 먹지 않는다
+    const before = await camera(page)
+    await drag(page, [195, 800], [175, 800])
+    expect(Math.abs((await camera(page)).x - before.x)).toBeLessThanOrEqual(20)
+    await drag(page, [175, 800], [195, 800])
+  }
+  expect(backgrounds.size).toBe(5)
 })
