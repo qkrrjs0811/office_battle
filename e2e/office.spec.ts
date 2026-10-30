@@ -150,6 +150,8 @@ test('이름표에서 누른 뒤 밖에서 떼면 이동하지 않는다', async
 })
 
 test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 온다', async ({ page }) => {
+  // 맵마다 끌기와 스크린샷을 여러 번 하므로 일곱 곳을 돌면 기본 제한 60초에 닿는다
+  test.setTimeout(120_000)
   await openMap(page)
   const route = [
     ['meeting', '회의실', 'work'],
@@ -165,6 +167,7 @@ test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 온다', async 
   for (const [to, name, back] of route) {
     const portal = page.getByTestId(`portal-${to}`)
     await bringIntoView(page, portal)
+    await page.screenshot({ path: `test-results/screens/portal-to-${to}.png` })
     const box = (await portal.boundingBox())!
     expect(box.height).toBeGreaterThanOrEqual(44)
     expect(box.width).toBeGreaterThanOrEqual(44)
