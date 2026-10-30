@@ -6,8 +6,8 @@ const baseURL = 'http://localhost:5320/'
 export default defineConfig({
   testDir: 'e2e',
   timeout: 60_000,
-  // 가로 화면은 픽셀이 3배 가까이 많다. 4개를 동시에 그리면 밀기 입력이 준비 동작 안에 들어가지 못한다
+  // 4개를 동시에 그리면 밀기 입력이 준비 동작 안에 들어가지 못한다
   workers: 2,
-  use: { baseURL, viewport: { width: 1280, height: 720 } },
+  use: { baseURL, viewport: { width: 390, height: 844 } },
   webServer: { command: 'npm run preview -- --port 5320 --strictPort', url: baseURL, reuseExistingServer: false },
 })

@@ -1,6 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 
-const SCREEN = { width: 1280, height: 720 }
+const SCREEN = { width: 390, height: 844 }
 
 const nextFrames = (page: Page) =>
   page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))))
@@ -50,7 +50,7 @@ const expectMapNotCut = async (page: Page) => {
   for (const clip of edges) expect(await countColors(page, await page.screenshot({ clip }))).toBe(1)
 }
 
-test('가로 화면에 블록 사무실 맵 전체가 그려진다', async ({ page }) => {
+test('폰 세로 화면에 블록 사무실 맵 전체가 그려진다', async ({ page }) => {
   await openMap(page)
   await expect(page.getByTestId('map-name')).toHaveText('1층 업무 구역')
 
@@ -70,7 +70,7 @@ for (const size of [
   { width: 640, height: 360 },
   { width: 1920, height: 1080 },
   { width: 1000, height: 900 },
-  { width: 390, height: 844 },
+  { width: 1280, height: 720 },
 ]) {
   test(`창이 ${size.width}×${size.height}이어도 화면 전체가 창 안에 들어오고 포탈을 누를 수 있다`, async ({ page }) => {
     await page.setViewportSize(size)
@@ -117,7 +117,7 @@ test('왼쪽 위 프로필에 얼굴, 직급, 레벨, HP, MP가 보이고 맵 �
   )
   expect(overflowing).toEqual([])
 
-  await page.screenshot({ path: 'test-results/screens/profile.png', clip: { x: 0, y: 0, width: 400, height: 110 } })
+  await page.screenshot({ path: 'test-results/screens/profile.png', clip: { x: 0, y: 0, width: SCREEN.width, height: 110 } })
 })
 
 test('포탈 이름표를 지나가며 끌어도 이동하지 않는다', async ({ page }) => {

@@ -6,7 +6,8 @@ import { MAPS, START_MAP } from './maps'
 import { FLOOR_COLORS, MIN_MAP_SIDE, SCREEN, TILE, buildFloorCells, fitMap, floorKindAt, mapTitle, type Rect } from './office'
 
 // 가장 큰 맵을 맞춘 화면에서 책상 한 세트가 차지하는 폭의 아래 한계(px)
-const MIN_DESK_ON_SCREEN = 90
+// 세로 폭 390에 20칸 넘는 맵 전체를 넣으면 90px은 불가능하다. 지금 크기보다 더 작아지지 않게만 막는다
+const MIN_DESK_ON_SCREEN = 36
 import { RANKS } from './ranks'
 
 const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.d && b.y < a.y + a.d

@@ -2,12 +2,12 @@
 import type { Block, Tile } from '../core/iso'
 import { FLOOR_COLORS } from './office'
 
-export const FIGHT_TILE: Tile = { halfWidth: 44, halfHeight: 22, zUnit: 44 }
+export const FIGHT_TILE: Tile = { halfWidth: 30, halfHeight: 15, zUnit: 30 }
 
 export const FIGHT_STAGE = {
   background: 0xd9dee3,
   // 바닥 격자의 맨 뒤 꼭짓점이 놓일 화면 위치
-  origin: { x: 640, y: 130 },
+  origin: { x: 195, y: 270 },
   size: 11,
   floorColors: [FLOOR_COLORS.wood, 0xbd9263],
   sideColor: 0x6d7278,
@@ -16,7 +16,7 @@ export const FIGHT_STAGE = {
   player: { x: 8.6, y: 8.6 },
   enemy: { x: 2.4, y: 2.4 },
   // 칼퇴 돌진 때 옆으로 비켜서는 거리(화면 px)
-  dashOffsetX: 100,
+  dashOffsetX: 70,
 }
 
 // 뒤쪽 벽과 소품. 싸움터를 사무실로 읽히게 한다
@@ -85,5 +85,5 @@ export const FIGHT_EFFECT = {
   enemyHitColor: '#ffffff',
   dodgeColor: '#2f9d62',
   warningColor: '#d8453e',
-  overtimeGlow: { color: 0xf5b83d, alpha: 0.55, radiusX: 66, radiusY: 32 },
+  overtimeGlow: { color: 0xf5b83d, alpha: 0.55, radiusX: 46, radiusY: 22 },
 }

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
-const SCREEN = { width: 1280, height: 720 }
-const CENTER = { x: 640, y: 360 }
+const SCREEN = { width: 390, height: 844 }
+const CENTER = { x: 195, y: 420 }
 
 const openWith = async (page: Page, seed: Record<string, unknown> = {}) => {
   await page.addInitScript((value) => {
@@ -98,7 +98,7 @@ test('화면을 누르면 서류가 날아가 상대 체력이 깎이고, 쿨타
 })
 
 test('적이 준비 동작을 할 때 밀면 공격을 피하고 체력이 그대로다', async ({ page }) => {
-  // 넓은 화면을 동시에 그리면 밀기가 2초 넘게 늦기도 한다. 준비 동작 안에 들어가도록 10배 느리게 돌린다
+  // 동시에 그리면 밀기가 2초 넘게 늦기도 한다. 준비 동작 안에 들어가도록 10배 느리게 돌린다
   test.setTimeout(120_000)
   await slowFights(page, 0.1)
   await openWith(page)

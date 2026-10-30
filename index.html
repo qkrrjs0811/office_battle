@@ -17,8 +17,8 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 1280px;
-        height: 720px;
+        width: 390px;
+        height: 844px;
         transform: translate(-50%, -50%) scale(var(--stage-scale, 1));
         overflow: hidden;
       }
@@ -115,11 +115,11 @@
         white-space: nowrap;
       }
       .menu-bar {
-        /* 맵은 마름모꼴이라 오른쪽 아래 구석이 비어 있다 */
+        /* 맵은 폭에 맞춰 줄어들어 화면 위아래가 비어 있다 */
         position: absolute;
         bottom: 14px;
-        right: 14px;
-        width: 440px;
+        left: 10px;
+        right: 10px;
         display: flex;
         gap: 8px;
         pointer-events: none;
@@ -155,15 +155,15 @@
       }
       .sheet {
         position: absolute;
-        top: 0;
+        left: 0;
         right: 0;
         bottom: 0;
-        width: 440px;
+        height: 66%;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
         padding: 12px;
-        border-radius: 16px 0 0 16px;
+        border-radius: 16px 16px 0 0;
         background: #f4f1e8;
         color: #2f3640;
         font: 13px/1.35 sans-serif;
@@ -299,9 +299,9 @@
       }
       .fight-top,
       .fight-bottom {
-        /* 싸움터는 마름모꼴이라 왼쪽 두 구석이 비어 있다 */
         position: absolute;
-        left: 14px;
+        left: 10px;
+        right: 10px;
         padding: 10px;
         box-sizing: border-box;
         border: 2px solid #c9d2db;
@@ -310,12 +310,10 @@
         pointer-events: none;
       }
       .fight-top {
-        top: 14px;
-        width: 360px;
+        top: 10px;
       }
       .fight-bottom {
-        bottom: 14px;
-        width: 420px;
+        bottom: 16px;
       }
       .fight-heading {
         display: flex;
@@ -338,7 +336,7 @@
       }
       .fight-warning {
         position: absolute;
-        top: 14px;
+        top: 100px;
         left: 50%;
         transform: translateX(-50%);
         padding: 8px 16px;

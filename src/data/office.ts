@@ -1,9 +1,9 @@
-// 맵을 그리는 공통 수치와 바닥 계산. 게임 화면은 가로 16:9를 기준으로 그리고 창 크기에 맞춰 통째로 줄인다.
+// 맵을 그리는 공통 수치와 바닥 계산. 게임 화면은 폰 세로 크기를 기준으로 그리고 창 크기에 맞춰 통째로 줄인다.
 // 맵 하나하나의 배치는 maps.ts에 있다.
 import { fitInto, project, type Tile } from '../core/iso'
 import { PORTAL_SIZE, type Furniture } from './furniture'
 
-export const SCREEN = { width: 1280, height: 720 }
+export const SCREEN = { width: 390, height: 844 }
 
 // 맵 전체를 화면에 맞출 때 가장자리에 남기는 여백
 export const MAP_MARGIN = 30

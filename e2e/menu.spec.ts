@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
-const SCREEN = { width: 1280, height: 720 }
+const SCREEN = { width: 390, height: 844 }
 
 const openWith = async (page: Page, seed: Record<string, unknown> = {}) => {
   await page.addInitScript((value) => {
