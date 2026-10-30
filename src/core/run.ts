@@ -1,5 +1,6 @@
 import { PERFORMANCE, type EnemyStats, type StatName } from '../data/ranks'
 import {
+  buyItem,
   canChallengeBoss,
   createCareer,
   currentRank,
@@ -17,6 +18,8 @@ export type Pilot = {
   act: (fight: Fight) => FightAction | null
   // 실적이 있을 때 키울 능력치. null이면 훈련하지 않는다
   train: (career: Career) => StatName | null
+  // 월급으로 살 매점 물건. 없거나 null이면 사지 않는다
+  buy?: (career: Career) => string | null
 }
 
 export type Opponent = { kind: 'employee' | 'boss'; name: string; stats: EnemyStats }
@@ -40,6 +43,12 @@ export const nextOpponent = (career: Career): Opponent => {
   return canChallengeBoss(career)
     ? { kind: 'boss', name: rank.bossName, stats: rank.boss }
     : { kind: 'employee', name: rank.employeeName, stats: rank.employee }
+}
+
+const buyAll = (career: Career, pilot: Pilot): Career => {
+  let next = career
+  for (let itemId = pilot.buy?.(next); itemId; itemId = pilot.buy?.(next)) next = buyItem(next, itemId)
+  return next
 }
 
 const trainAll = (career: Career, pilot: Pilot): Career => {
@@ -76,7 +85,7 @@ export const runCareer = (pilot: Pilot, seed: number, maxFights = DEFAULT_MAX_FI
   let career = createCareer()
   const log: FightLog[] = []
   while (!career.ruling && log.length < maxFights) {
-    const result = fightNext(trainAll(career, pilot), pilot, seed + log.length)
+    const result = fightNext(buyAll(trainAll(career, pilot), pilot), pilot, seed + log.length)
     career = result.career
     log.push(result.log)
   }

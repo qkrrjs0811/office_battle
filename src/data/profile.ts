@@ -1,6 +1,3 @@
-// 프로필에 보이는 값 중 아직 규칙이 없는 것의 임시값. 레벨 규칙이 생기면 그쪽 값으로 바꾼다.
-export const PROFILE_START = { level: 1, mp: 30 }
-
 // 프로필 얼굴. 맵과 같은 블록으로 쌓은 인턴 한 명이다. 아래에서 위로 쌓는 순서대로 적는다.
 export const PORTRAIT_BLOCKS = [
   { x: 0.2, y: 0.2, z: 0, w: 1.6, d: 1.2, h: 1.2, color: 0x3c4a63 }, // 정장

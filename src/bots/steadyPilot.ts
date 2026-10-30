@@ -1,4 +1,5 @@
 import type { Pilot } from '../core/run'
+import { SHOP_ITEMS } from '../data/growth'
 import { TRAIN_GAIN, type StatName } from '../data/ranks'
 
 const STAT_NAMES: StatName[] = ['attack', 'hp', 'defense']
@@ -6,7 +7,7 @@ const STAT_NAMES: StatName[] = ['attack', 'hp', 'defense']
 // 맞기 이만큼 전에 돌진한다
 const DASH_BEFORE_HIT_MS = 300
 
-// 터미널 한 판을 돌리는 기본 조작. 때릴 수 있으면 때리고 맞기 직전에 피하며, 능력치는 고르게 키운다.
+// 터미널 한 판을 돌리는 기본 조작. 때릴 수 있으면 때리고 맞기 직전에 피하며, 능력치는 고르게 키우고, 살 수 있는 장비는 산다.
 export const steadyPilot: Pilot = {
   act: (fight) => {
     const { player, enemy, elapsedMs: now } = fight
@@ -18,4 +19,6 @@ export const steadyPilot: Pilot = {
     STAT_NAMES.reduce((lowest, name) =>
       stats[name] / TRAIN_GAIN[name] < stats[lowest] / TRAIN_GAIN[lowest] ? name : lowest,
     ),
+  buy: ({ equipmentIds, money }) =>
+    SHOP_ITEMS.find((item) => !equipmentIds.includes(item.id) && money >= item.price)?.id ?? null,
 }

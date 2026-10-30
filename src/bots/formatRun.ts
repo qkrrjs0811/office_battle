@@ -19,6 +19,7 @@ export const formatRun = ({ career, log }: CareerRun): string => {
     '',
     `결과: ${ending}`,
     `싸움 ${log.length}번, 패배 ${losses}번, 전투 시간 ${totalSeconds.toFixed(0)}초`,
+    `레벨 ${career.level}, 남은 월급 ${career.money}, 남은 실적 ${career.performance}`,
     `능력치: 체력 ${stats.hp}, 공격 ${stats.attack}, 방어 ${stats.defense}, 장비 ${career.equipmentIds.length}개`,
   ].join('\n')
 }

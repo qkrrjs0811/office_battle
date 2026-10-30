@@ -1,3 +1,4 @@
+import { LEVEL, SHOP_ITEMS, type FightReward } from '../data/growth'
 import {
   PERFORMANCE,
   RANKS,
@@ -7,6 +8,7 @@ import {
   type StatName,
   type Stats,
 } from '../data/ranks'
+import { fightReward, gainXp, levelBonus } from './growth'
 
 // 한 플레이어의 회사 생활. 저장하기 쉽게 그대로 JSON이 되는 값만 둔다.
 export type Career = {
@@ -14,6 +16,9 @@ export type Career = {
   stats: Stats
   equipmentIds: string[]
   performance: number
+  level: number
+  xp: number
+  money: number
   employeesBeaten: number
   ruling: boolean
 }
@@ -26,6 +31,12 @@ const addStats = (stats: Stats, bonus: Partial<Stats>): Stats => {
   return next
 }
 
+const collectReward = (career: Career, { xp, money }: FightReward): Career => ({
+  ...career,
+  ...gainXp(career, xp),
+  money: career.money + money,
+})
+
 const assertPlaying = (career: Career) => {
   if (career.ruling) throw new Error('이미 회사를 지배해 판이 끝났다')
 }
@@ -35,6 +46,9 @@ export const createCareer = (): Career => ({
   stats: { ...STARTING_STATS },
   equipmentIds: [],
   performance: 0,
+  level: LEVEL.start,
+  xp: 0,
+  money: 0,
   employeesBeaten: 0,
   ruling: false,
 })
@@ -42,10 +56,10 @@ export const createCareer = (): Career => ({
 export const currentRank = (career: Career): Rank => RANKS[career.rankIndex]
 
 export const effectiveStats = (career: Career): Stats => {
-  const owned = RANKS.map((rank) => rank.bossDrop).filter((item) =>
+  const owned = [...RANKS.map((rank) => rank.bossDrop), ...SHOP_ITEMS].filter((item) =>
     career.equipmentIds.includes(item.id),
   )
-  return owned.reduce((stats, item) => addStats(stats, item.bonus), { ...career.stats })
+  return owned.reduce((stats, item) => addStats(stats, item.bonus), addStats(career.stats, levelBonus(career.level)))
 }
 
 export const employeesLeft = (career: Career): number =>
@@ -57,11 +71,14 @@ export const canChallengeBoss = (career: Career): boolean =>
 export const winAgainstEmployee = (career: Career): Career => {
   assertPlaying(career)
   if (employeesLeft(career) === 0) throw new Error('이 층에 남은 직원이 없다')
-  return {
-    ...career,
-    employeesBeaten: career.employeesBeaten + 1,
-    performance: career.performance + PERFORMANCE.perEmployeeWin,
-  }
+  return collectReward(
+    {
+      ...career,
+      employeesBeaten: career.employeesBeaten + 1,
+      performance: career.performance + PERFORMANCE.perEmployeeWin,
+    },
+    fightReward('employee', career.rankIndex),
+  )
 }
 
 // 보스를 이기면 승진한다. 마지막 층의 보스를 이기면 회사를 지배한다.
@@ -70,25 +87,31 @@ export const winAgainstBoss = (career: Career): Career => {
   if (!canChallengeBoss(career)) throw new Error('직원을 다 이겨야 보스와 싸울 수 있다')
   const rank = currentRank(career)
   const isLastFloor = career.rankIndex === RANKS.length - 1
-  return {
-    ...career,
-    rankIndex: isLastFloor ? career.rankIndex : career.rankIndex + 1,
-    stats: addStats(career.stats, rank.promotionBonus),
-    equipmentIds: [...career.equipmentIds, rank.bossDrop.id],
-    performance: career.performance + PERFORMANCE.perBossWin,
-    employeesBeaten: 0,
-    ruling: isLastFloor,
-  }
+  return collectReward(
+    {
+      ...career,
+      rankIndex: isLastFloor ? career.rankIndex : career.rankIndex + 1,
+      stats: addStats(career.stats, rank.promotionBonus),
+      equipmentIds: [...career.equipmentIds, rank.bossDrop.id],
+      performance: career.performance + PERFORMANCE.perBossWin,
+      employeesBeaten: 0,
+      ruling: isLastFloor,
+    },
+    fightReward('boss', career.rankIndex),
+  )
 }
 
 // 지면 층의 처음으로 돌아갈 뿐, 키운 것은 모두 남는다.
 export const loseFight = (career: Career): Career => {
   assertPlaying(career)
-  return {
-    ...career,
-    employeesBeaten: 0,
-    performance: career.performance + PERFORMANCE.perLoss,
-  }
+  return collectReward(
+    {
+      ...career,
+      employeesBeaten: 0,
+      performance: career.performance + PERFORMANCE.perLoss,
+    },
+    fightReward('loss', career.rankIndex),
+  )
 }
 
 export const trainStat = (career: Career, stat: StatName): Career => {
@@ -98,5 +121,18 @@ export const trainStat = (career: Career, stat: StatName): Career => {
     ...career,
     stats: { ...career.stats, [stat]: career.stats[stat] + TRAIN_GAIN[stat] },
     performance: career.performance - PERFORMANCE.trainCost,
+  }
+}
+
+export const buyItem = (career: Career, itemId: string): Career => {
+  assertPlaying(career)
+  const item = SHOP_ITEMS.find((shopItem) => shopItem.id === itemId)
+  if (!item) throw new Error('매점에 없는 물건이다')
+  if (career.equipmentIds.includes(item.id)) throw new Error('이미 산 장비다')
+  if (career.money < item.price) throw new Error('월급이 모자란다')
+  return {
+    ...career,
+    equipmentIds: [...career.equipmentIds, item.id],
+    money: career.money - item.price,
   }
 }

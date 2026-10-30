@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { SHOP_ITEMS } from '../data/growth'
 import { RANKS } from '../data/ranks'
 import { createCareer, currentRank, effectiveStats, employeesLeft, winAgainstEmployee } from './career'
 import type { FightAction } from './combat'
@@ -78,5 +79,21 @@ describe('한 판', () => {
     const trainer: Pilot = { ...idle, train: () => 'hp' }
     const run = runCareer(trainer, 1, 20)
     expect(run.career.stats.hp).toBeGreaterThan(createCareer().stats.hp)
+  })
+
+  it('끝까지 가면 레벨이 오르고 월급이 쌓인다', () => {
+    const run = runCareer(mash, 1)
+    expect(run.career.level).toBeGreaterThan(createCareer().level)
+    expect(run.career.money).toBeGreaterThan(0)
+  })
+
+  it('살 물건을 고르면 월급을 써서 장비를 산다', () => {
+    const item = SHOP_ITEMS[0]
+    const buyer: Pilot = {
+      ...mash,
+      buy: ({ equipmentIds, money }) => (!equipmentIds.includes(item.id) && money >= item.price ? item.id : null),
+    }
+    const run = runCareer(buyer, 1)
+    expect(run.career.equipmentIds).toContain(item.id)
   })
 })

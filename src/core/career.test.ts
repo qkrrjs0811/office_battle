@@ -12,6 +12,7 @@ import {
   winAgainstEmployee,
   type Career,
 } from './career'
+import { levelBonus } from './growth'
 
 const clearFloor = (career: Career): Career => {
   let next = career
@@ -96,8 +97,9 @@ describe('승진', () => {
   it('장비 효과는 실제 능력치에 더해지고 기본 능력치에는 섞이지 않는다', () => {
     const career = promote(createCareer())
     const bonus = RANKS[0].bossDrop.bonus
-    expect(effectiveStats(career).attack).toBe(career.stats.attack + (bonus.attack ?? 0))
-    expect(effectiveStats(career).hp).toBe(career.stats.hp + (bonus.hp ?? 0))
+    const fromLevel = levelBonus(career.level)
+    expect(effectiveStats(career).attack).toBe(career.stats.attack + fromLevel.attack + (bonus.attack ?? 0))
+    expect(effectiveStats(career).hp).toBe(career.stats.hp + fromLevel.hp + (bonus.hp ?? 0))
     expect(effectiveStats(createCareer())).toEqual(STARTING_STATS)
   })
 
