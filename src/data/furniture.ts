@@ -40,6 +40,8 @@ export const PALETTE = {
   frame: 0xf7f7f5,
   curb: 0xd8cdb8,
   portalFrame: 0x3a3f4b,
+  stall: 0x5f8fa8,
+  stallPanel: 0x86aec2,
 }
 
 const b = (x: number, y: number, z: number, w: number, d: number, h: number, color: number, alpha?: number): Block => ({
@@ -208,7 +210,84 @@ export function rug(x: number, y: number, w: number, d: number): Furniture {
   return item('양탄자', x, y, w, d, [b(x, y, 0, w, d, 0.04, PALETTE.rug)])
 }
 
-export const PORTAL_SIZE = { span: 2.6, depth: 0.6 }
+// 정문의 회전문. 바깥은 보이지 않고 유리만 비친다.
+export function revolvingDoor(x: number, y: number): Furniture {
+  return item('회전문', x, y, 3.2, 1, [
+    b(x, y, 0, 0.3, 1, 2.3, PALETTE.portalFrame),
+    b(x + 2.9, y, 0, 0.3, 1, 2.3, PALETTE.portalFrame),
+    b(x + 1.5, y + 0.4, 0, 0.2, 0.2, 2.3, PALETTE.portalFrame),
+    b(x + 0.3, y + 0.45, 0, 2.6, 0.1, 2.3, PALETTE.glass, 0.6),
+    b(x, y, 2.3, 3.2, 1, 0.25, PALETTE.portalFrame),
+  ])
+}
+
+// 사원증을 찍고 지나가는 출입 게이트.
+export function speedGate(x: number, y: number): Furniture {
+  return item('출입 게이트', x, y, 1.4, 1.4, [
+    b(x, y, 0, 0.3, 1.4, 0.95, PALETTE.machine),
+    b(x + 1.1, y, 0, 0.3, 1.4, 0.95, PALETTE.machine),
+    b(x + 0.3, y + 0.65, 0.35, 0.8, 0.08, 0.5, PALETTE.glass, 0.7),
+    b(x + 0.05, y + 0.2, 0.95, 0.2, 0.3, 0.04, PALETTE.vending),
+    b(x + 1.15, y + 0.2, 0.95, 0.2, 0.3, 0.04, PALETTE.vending),
+  ])
+}
+
+// 안내 데스크. 직원 의자가 뒤쪽, 앞쪽에 금색 띠가 있다.
+export function receptionDesk(x: number, y: number, w: number): Furniture {
+  return item('안내 데스크', x, y, w, 2.2, [
+    ...plainChair(x + w / 2 - 0.3, y, false),
+    b(x, y + 1, 0, w, 1.2, 0.95, PALETTE.counter),
+    b(x, y + 1, 0.95, w, 1.2, 0.08, PALETTE.execDesk),
+    b(x + 0.3, y + 2.2, 0.45, w - 0.6, 0.02, 0.14, PALETTE.gold),
+    b(x + w / 2 - 0.5, y + 1.15, 1.03, 1, 0.1, 0.55, PALETTE.monitor),
+    b(x + w / 2 - 0.44, y + 1.25, 1.07, 0.88, 0.03, 0.45, PALETTE.screen),
+  ])
+}
+
+// 세면대: 벽에 거울을 달고 앞에 도기 세면기를 놓는다.
+export function sink(x: number, y: number): Furniture {
+  return item('세면대', x, y, 1.5, 1, [
+    b(x + 0.1, y, 0, 1.3, 0.9, 0.6, PALETTE.deskLeg),
+    b(x, y, 0.6, 1.5, 1, 0.12, PALETTE.white),
+    b(x + 0.4, y + 0.3, 0.72, 0.7, 0.5, 0.06, PALETTE.water),
+    b(x + 0.68, y + 0.08, 0.72, 0.14, 0.2, 0.25, PALETTE.machine),
+    b(x + 0.1, y, 1.05, 1.3, 0.06, 1, PALETTE.frame),
+    b(x + 0.16, y + 0.06, 1.11, 1.18, 0.02, 0.88, PALETTE.glass),
+  ])
+}
+
+// 화장실 한 칸. 문이 닫힌 칸은 누가 숨어 있는 칸이고, 열린 칸은 변기가 보인다.
+export function toiletStall(x: number, y: number, occupied: boolean): Furniture {
+  const w = 2
+  const d = 2.4
+  const toilet = [
+    b(x + 0.65, y + 0.15, 0, 0.7, 0.35, 0.95, PALETTE.white),
+    b(x + 0.7, y + 0.5, 0, 0.6, 0.85, 0.45, PALETTE.white),
+    b(x + 0.75, y + 0.55, 0.45, 0.5, 0.75, 0.03, PALETTE.cooler),
+  ]
+  const door = occupied
+    ? [
+        b(x + 0.1, y + d - 0.1, 0.15, w - 0.2, 0.08, 1.45, PALETTE.stall),
+        b(x + w - 0.45, y + d - 0.02, 0.8, 0.25, 0.02, 0.15, PALETTE.mug),
+      ]
+    : []
+  return item('화장실 칸', x, y, w, d, [
+    ...toilet,
+    b(x, y, 0, w, 0.1, 1.7, PALETTE.stallPanel),
+    b(x, y + 0.1, 0, 0.1, d - 0.1, 1.7, PALETTE.stallPanel),
+    b(x + w - 0.1, y + 0.1, 0, 0.1, d - 0.1, 1.7, PALETTE.stallPanel),
+    ...door,
+  ])
+}
+
+export function paperBin(x: number, y: number): Furniture {
+  return item('휴지통', x, y, 0.6, 0.6, [
+    b(x, y, 0, 0.6, 0.6, 0.6, PALETTE.machine),
+    b(x + 0.1, y + 0.1, 0.6, 0.4, 0.4, 0.12, PALETTE.paper),
+  ])
+}
+
+export const PORTAL_SIZE ={ span: 2.6, depth: 0.6 }
 
 // 벽에 붙여 세우는 포탈. 빛나는 면이 방 안쪽을 보고, 색으로 어디로 가는지 알린다.
 export function portalGate(x: number, y: number, alongX: boolean, glow: number): Furniture {

@@ -3,7 +3,7 @@ import { project } from '../core/iso'
 import { findBrokenLinks, findUnreachable } from '../core/travel'
 import { DESK_SET, PORTAL_SIZE, type Furniture } from './furniture'
 import { MAPS, START_MAP } from './maps'
-import { FLOOR_COLORS, SCREEN, TILE, buildFloorCells, floorKindAt, mapTitle, type Rect } from './office'
+import { FLOOR_COLORS, MIN_MAP_SIDE, SCREEN, TILE, buildFloorCells, floorKindAt, mapTitle, type Rect } from './office'
 import { RANKS } from './ranks'
 
 const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.d && b.y < a.y + a.d
@@ -12,8 +12,8 @@ const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y
 const solidOf = (furniture: Furniture[]) => furniture.filter((item) => item.name !== '양탄자')
 
 describe('맵 사이의 연결', () => {
-  it('회사 맵 다섯 곳이 모두 있다', () => {
-    expect(MAPS.map((m) => m.id).sort()).toEqual(['archive', 'executive', 'lounge', 'meeting', 'work'])
+  it('회사 맵 일곱 곳이 모두 있다', () => {
+    expect(MAPS.map((m) => m.id).sort()).toEqual(['archive', 'executive', 'gate', 'lounge', 'meeting', 'restroom', 'work'])
   })
 
   it('포탈이 모두 양방향이고 시작 맵에서 어디든 갈 수 있다', () => {
@@ -33,6 +33,12 @@ describe('맵 사이의 연결', () => {
 describe('맵 이름', () => {
   it('"1층 회사 정문"처럼 층과 맵 이름으로 쓴다', () => {
     expect(mapTitle({ storey: 1, name: '회사 정문' })).toBe('1층 회사 정문')
+  })
+
+  it('1층에 회사 정문과 화장실이 있다', () => {
+    const titles = MAPS.map(mapTitle)
+    expect(titles).toContain('1층 회사 정문')
+    expect(titles).toContain('1층 화장실')
   })
 
   // 임원실은 장소 이름이라 '임원'이 들어가도 된다. 직급 자체를 맵 이름으로 쓰지 않으면 된다.
@@ -59,6 +65,8 @@ describe('맵마다 다른 특색', () => {
       ['lounge', '탁구대'],
       ['archive', '캐비닛'],
       ['executive', '임원 책상'],
+      ['gate', '출입 게이트'],
+      ['restroom', '세면대'],
     ]
     for (const [id, name] of signature) {
       const others = MAPS.filter((m) => m.id !== id).map((m) => count(m.id, name))
@@ -112,6 +120,12 @@ describe.each(MAPS)('$name 배치', (map) => {
     }
   })
 
+  // 사용자가 좁다고 했을 때의 맵은 가장 넓은 곳이 288칸이었다
+  it('맵이 좁지 않다', () => {
+    expect(Math.min(map.width, map.depth)).toBeGreaterThanOrEqual(MIN_MAP_SIDE)
+    expect(map.width * map.depth).toBeGreaterThan(288)
+  })
+
   it('맵이 화면보다 넓어 끌어서 둘러본다', () => {
     const points = buildFloorCells(map).map((c) => project({ x: c.x, y: c.y, z: 0 }, TILE))
     const width = Math.max(...points.map((p) => p.x)) - Math.min(...points.map((p) => p.x))
@@ -120,7 +134,7 @@ describe.each(MAPS)('$name 배치', (map) => {
 
   it('바닥은 사무실 재질뿐이고 잔디 같은 바깥 땅이 없다', () => {
     for (const cell of buildFloorCells(map)) {
-      expect(['carpet', 'wood', 'darkWood', 'tile', 'mint', 'concrete']).toContain(cell.kind)
+      expect(['carpet', 'wood', 'darkWood', 'tile', 'mint', 'concrete', 'marble', 'bathTile']).toContain(cell.kind)
     }
   })
 

@@ -149,14 +149,16 @@ test('이름표에서 누른 뒤 밖에서 떼면 이동하지 않는다', async
   await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'work')
 })
 
-test('포탈로 맵 다섯 곳을 한 바퀴 돌아 제자리로 온다', async ({ page }) => {
+test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 온다', async ({ page }) => {
   await openMap(page)
   const route = [
     ['meeting', '회의실', 'work'],
     ['executive', '임원실', 'meeting'],
     ['archive', '자료실', 'executive'],
     ['lounge', '휴게실', 'archive'],
-    ['work', '업무 구역', 'lounge'],
+    ['restroom', '화장실', 'lounge'],
+    ['gate', '회사 정문', 'restroom'],
+    ['work', '업무 구역', 'gate'],
   ] as const
 
   const backgrounds = new Set<string>()
@@ -190,5 +192,5 @@ test('포탈로 맵 다섯 곳을 한 바퀴 돌아 제자리로 온다', async 
     expect(Math.abs((await camera(page)).x - before.x)).toBeLessThanOrEqual(20)
     await drag(page, [175, 800], [195, 800])
   }
-  expect(backgrounds.size).toBe(5)
+  expect(backgrounds.size).toBe(7)
 })

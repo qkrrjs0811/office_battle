@@ -8,8 +8,11 @@ export const SCREEN = { width: 390, height: 844 }
 export const TILE: Tile = { halfWidth: 22, halfHeight: 11, zUnit: 22 }
 
 export type Rect = { x: number; y: number; w: number; d: number }
-export type FloorKind = 'carpet' | 'wood' | 'darkWood' | 'tile' | 'mint' | 'concrete'
-export type MapId = 'work' | 'meeting' | 'lounge' | 'archive' | 'executive'
+export type FloorKind = 'carpet' | 'wood' | 'darkWood' | 'tile' | 'mint' | 'concrete' | 'marble' | 'bathTile'
+export type MapId = 'work' | 'meeting' | 'lounge' | 'archive' | 'executive' | 'gate' | 'restroom'
+
+// 맵의 가로세로는 이 칸 수보다 짧지 않게 만든다.
+export const MIN_MAP_SIDE = 20
 
 export type Portal = { to: MapId; x: number; y: number; alongX: boolean }
 
@@ -40,6 +43,8 @@ export const FLOOR_COLORS: Record<FloorKind, number> = {
   tile: 0xd6d3cb,
   mint: 0xa9dcc4,
   concrete: 0x8f9194,
+  marble: 0xeeebe4,
+  bathTile: 0xa6cfe2,
 }
 
 // 칸마다 밝기를 이만큼 흔든다.
@@ -50,6 +55,8 @@ export const FLOOR_VARIATION: Record<FloorKind, number> = {
   tile: 0.025,
   mint: 0.03,
   concrete: 0.05,
+  marble: 0.02,
+  bathTile: 0.04,
 }
 
 // 층 옆면. 위에서 아래로 콘크리트, 어두운 콘크리트, 철골.
