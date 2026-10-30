@@ -184,6 +184,7 @@ test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 온다', async 
     expectApart(backBox, (await page.getByTestId('profile').boundingBox())!)
     expectApart(backBox, (await page.getByTestId('map-name').boundingBox())!)
     expectApart(backBox, (await page.getByTestId('wallet').boundingBox())!)
+    expectApart(backBox, (await page.getByTestId('menu-fight').boundingBox())!)
     expectApart(backBox, (await page.getByTestId('menu-quest').boundingBox())!)
     expectApart(backBox, (await page.getByTestId('menu-train').boundingBox())!)
     await page.screenshot({ path: `test-results/screens/map-${to}.png` })

@@ -8,7 +8,12 @@ export const COMBAT = {
   minDamage: 1,
   // 적의 공격 간격이 이 비율만큼 흔들려 박자만 외워서는 못 피한다
   enemyIntervalJitter: 0.2,
+  // 화면이 멈췄다 돌아와도 한 번에 이만큼만 진행한다. tickMs의 배수로 둔다
+  maxFrameMs: 300,
 }
+
+// 이만큼 움직이면 누르기가 아니라 밀기다
+export const SWIPE = { distancePx: 30 }
 
 // 결재 서류 던지기(누르기)
 export const PAPER_THROW = { cooldownMs: 800 }

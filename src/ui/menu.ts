@@ -1,7 +1,8 @@
 import type { Career } from '../core/career'
-import { bonusText, claimableCount, questMenu, rewardText, shopMenu, trainMenu, type ShopStatus } from '../core/menus'
+import { bonusText, claimableCount, fightMenu, questMenu, rewardText, shopMenu, trainMenu, type ShopStatus } from '../core/menus'
 import { buildProfile } from '../core/profile'
 import type { QuestEntry } from '../core/quests'
+import { FIGHT_TEXT } from '../data/fightText'
 import type { ShopItem } from '../data/growth'
 import { STAT_LABELS, type StatName } from '../data/ranks'
 import { onPress } from './press'
@@ -10,6 +11,7 @@ export type MenuActions = {
   claim: (questId: string) => void
   buy: (itemId: string) => void
   train: (stat: StatName) => void
+  fight: () => void
 }
 
 type Tab = 'quest' | 'shop' | 'train'
@@ -73,6 +75,16 @@ export function mountMenu(parent: HTMLElement, actions: MenuActions) {
   const bar = element('div', 'menu-bar')
   const badge = element('span', 'menu-badge')
   badge.dataset.testid = 'quest-badge'
+  const fightButton = document.createElement('button')
+  fightButton.type = 'button'
+  fightButton.className = 'menu-button menu-fight'
+  fightButton.dataset.testid = 'menu-fight'
+  const fightLabel = element('span', 'menu-fight-label', FIGHT_TEXT.fightButton)
+  const fightNote = element('span', 'menu-fight-note')
+  fightNote.dataset.testid = 'menu-fight-note'
+  fightButton.append(fightLabel, fightNote)
+  onPress(fightButton, () => actions.fight())
+  bar.append(fightButton)
   for (const { id, label } of TABS) {
     const button = document.createElement('button')
     button.type = 'button'
@@ -132,6 +144,13 @@ export function mountMenu(parent: HTMLElement, actions: MenuActions) {
     const claimable = claimableCount(career)
     badge.textContent = String(claimable)
     badge.hidden = claimable === 0
+    const next = fightMenu(career)
+    fightButton.disabled = !next.available
+    fightNote.textContent = !next.available
+      ? FIGHT_TEXT.fightClosed
+      : next.kind === 'boss'
+        ? FIGHT_TEXT.fightBoss
+        : FIGHT_TEXT.fightProgress(next.beaten, next.total)
     sheet.hidden = !tab
     if (!tab) return
     const { stats, money, performance } = buildProfile(career)

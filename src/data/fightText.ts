@@ -1,0 +1,23 @@
+// 전투 화면 문구
+export const FIGHT_TEXT = {
+  kind: { employee: '직원', boss: '보스' },
+  fightButton: '싸우기',
+  fightProgress: (beaten: number, total: number) => `직원 ${beaten}/${total}`,
+  fightBoss: '보스 등장',
+  fightClosed: '판 끝남',
+  hp: '체력',
+  warning: '온다! 밀어서 피해라',
+  throw: { how: '누르기', name: '서류 던지기' },
+  dash: { how: '밀기', name: '칼퇴 돌진' },
+  overtime: { how: '버튼', name: '야근 버프' },
+  dodged: '칼퇴 회피!',
+  overtimeActive: '야근 중!',
+  won: '이겼다!',
+  lost: '깨졌다…',
+  lostNote: '이 층 처음부터 다시 싸우지만 키운 것은 그대로다.',
+  promoted: (rankName: string) => `승진! 이제 ${rankName}이다`,
+  ruling: '회사를 지배했다!',
+  levelUp: (levels: number) => `레벨 +${levels}`,
+  equipment: (name: string) => `장비 획득: ${name}`,
+  close: '사무실로',
+}

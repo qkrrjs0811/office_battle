@@ -248,6 +248,189 @@
         white-space: nowrap;
         pointer-events: none;
       }
+      .menu-fight {
+        flex: 1.3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        border-color: #f5d76e;
+        background: #d8453e;
+      }
+      .menu-fight:disabled {
+        border-color: #c9d2db;
+        background: #5c6670;
+        cursor: default;
+      }
+      .menu-fight-note {
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      #app[data-mode='fight'] .portal-layer,
+      #app[data-mode='fight'] .profile,
+      #app[data-mode='fight'] .corner,
+      #app[data-mode='fight'] .menu-bar,
+      #app[data-mode='fight'] .sheet {
+        display: none;
+      }
+      .fight,
+      .fight-stage,
+      .fight-result {
+        position: absolute;
+        inset: 0;
+      }
+      .fight[hidden],
+      .fight-result[hidden],
+      .fight-warning[hidden] {
+        display: none;
+      }
+      .fight {
+        color: #fff;
+        font: 700 14px/1.3 sans-serif;
+      }
+      .fight-stage {
+        cursor: pointer;
+        touch-action: none;
+        user-select: none;
+      }
+      .fight-top,
+      .fight-bottom {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        padding: 10px;
+        box-sizing: border-box;
+        border: 2px solid #c9d2db;
+        border-radius: 12px;
+        background: #2f3640;
+        pointer-events: none;
+      }
+      .fight-top {
+        top: 10px;
+      }
+      .fight-bottom {
+        bottom: 16px;
+      }
+      .fight-heading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+        font-size: 16px;
+      }
+      .fight-kind {
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: #5c6670;
+        font-size: 13px;
+      }
+      .fight-kind.boss {
+        background: #d8453e;
+      }
+      .fight-hp .gauge-fill {
+        background: #d8453e;
+      }
+      .fight-warning {
+        position: absolute;
+        top: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 16px;
+        border-radius: 10px;
+        background: #d8453e;
+        font-size: 18px;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      .fight-skills {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .fight-skill {
+        position: relative;
+        flex: 1;
+        min-height: 56px;
+        padding: 0;
+        border: 2px solid #5c6670;
+        border-radius: 10px;
+        background: #171b21;
+        color: #fff;
+        font: inherit;
+        overflow: hidden;
+      }
+      .fight-skill.ready {
+        border-color: #f5d76e;
+      }
+      .fight-skill.active {
+        border-color: #fff;
+      }
+      button.fight-skill {
+        cursor: pointer;
+        pointer-events: auto;
+        touch-action: none;
+      }
+      .fight-skill-fill {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        background: #3f7fd1;
+      }
+      .fight-skill-text {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 52px;
+      }
+      .fight-skill-how {
+        color: #f5d76e;
+        font-size: 12px;
+      }
+      .fight-skill-name {
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .fight-result {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(23, 27, 33, 0.55);
+      }
+      .fight-result-panel {
+        width: 300px;
+        padding: 20px;
+        box-sizing: border-box;
+        border-radius: 16px;
+        background: #f4f1e8;
+        color: #2f3640;
+        text-align: center;
+      }
+      .fight-result-title {
+        font-size: 28px;
+        font-weight: 900;
+      }
+      .fight-result-lines {
+        margin: 12px 0 16px;
+        font-size: 14px;
+      }
+      .fight-result-line {
+        margin-top: 4px;
+      }
+      .fight-result-close {
+        width: 100%;
+        min-height: 50px;
+        border: 0;
+        border-radius: 10px;
+        background: #2f3640;
+        color: #fff;
+        font: 700 16px/1 sans-serif;
+        cursor: pointer;
+        touch-action: none;
+      }
       .portal-layer {
         position: absolute;
         inset: 0;

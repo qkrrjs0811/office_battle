@@ -7,6 +7,7 @@ import {
   effectiveStats,
   employeesLeft,
   loseFight,
+  settleFight,
   trainStat,
   winAgainstBoss,
   winAgainstEmployee,
@@ -158,5 +159,16 @@ describe('훈련', () => {
 
   it('실적이 모자라면 훈련할 수 없다', () => {
     expect(() => trainStat(createCareer(), 'hp')).toThrow()
+  })
+})
+
+describe('싸움 결과 반영', () => {
+  it('이기면 상대에 맞는 승리 규칙을, 지면 패배 규칙을 따른다', () => {
+    const start = createCareer()
+    expect(settleFight(start, 'employee', 'won')).toEqual(winAgainstEmployee(start))
+    expect(settleFight(start, 'employee', 'lost')).toEqual(loseFight(start))
+    const cleared = clearFloor(start)
+    expect(settleFight(cleared, 'boss', 'won')).toEqual(winAgainstBoss(cleared))
+    expect(settleFight(cleared, 'boss', 'lost')).toEqual(loseFight(cleared))
   })
 })

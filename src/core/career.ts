@@ -120,6 +120,14 @@ export const loseFight = (career: Career): Career => {
   )
 }
 
+export type OpponentKind = 'employee' | 'boss'
+
+// 끝난 싸움의 결과를 회사 생활에 반영한다. 봇과 사람이 같은 길을 쓴다.
+export const settleFight = (career: Career, kind: OpponentKind, result: 'won' | 'lost'): Career => {
+  if (result === 'lost') return loseFight(career)
+  return kind === 'boss' ? winAgainstBoss(career) : winAgainstEmployee(career)
+}
+
 export const trainStat = (career: Career, stat: StatName): Career => {
   assertPlaying(career)
   if (career.performance < PERFORMANCE.trainCost) throw new Error('실적이 모자란다')

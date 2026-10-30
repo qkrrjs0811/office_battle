@@ -6,12 +6,11 @@ import {
   createCareer,
   currentRank,
   effectiveStats,
-  loseFight,
+  settleFight,
   trainStat,
   visitMap,
-  winAgainstBoss,
-  winAgainstEmployee,
   type Career,
+  type OpponentKind,
 } from './career'
 import { createFight, stepFight, type Fight, type FightAction, type FightResult } from './combat'
 
@@ -28,7 +27,7 @@ export type Pilot = {
   claim?: (career: Career) => string | null
 }
 
-export type Opponent = { kind: 'employee' | 'boss'; name: string; stats: EnemyStats }
+export type Opponent = { kind: OpponentKind; name: string; stats: EnemyStats }
 
 export type FightLog = {
   rankName: string
@@ -83,15 +82,14 @@ export const fightNext = (career: Career, pilot: Pilot, seed: number): { career:
   const opponent = nextOpponent(career)
   let fight = createFight(effectiveStats(career), opponent.stats, seed)
   while (fight.result === 'ongoing') fight = stepFight(fight, pilot.act(fight))
-  const won = fight.result === 'won'
-  const afterWin = opponent.kind === 'boss' ? winAgainstBoss : winAgainstEmployee
+  const result = fight.result === 'won' ? 'won' : 'lost'
   return {
-    career: won ? afterWin(career) : loseFight(career),
+    career: settleFight(career, opponent.kind, result),
     log: {
       rankName: currentRank(career).name,
       kind: opponent.kind,
       opponentName: opponent.name,
-      result: won ? 'won' : 'lost',
+      result,
       elapsedMs: fight.elapsedMs,
       hpLeft: fight.player.hp,
     },

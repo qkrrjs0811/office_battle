@@ -15,6 +15,7 @@ export type FightResult = 'ongoing' | 'won' | 'lost'
 export type Fight = {
   elapsedMs: number
   rngState: number
+  maxHp: { player: number; enemy: number }
   player: Stats & {
     throwReadyAt: number
     dashReadyAt: number
@@ -53,6 +54,7 @@ export const createFight = (player: Stats, enemy: EnemyStats, seed: number): Fig
   return {
     elapsedMs: 0,
     rngState,
+    maxHp: { player: player.hp, enemy: enemy.hp },
     player: {
       ...player,
       throwReadyAt: 0,
