@@ -1,3 +1,9 @@
+import { createGame } from './game/createGame'
+import { mountHud } from './ui/hud'
+
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.dataset.testid = 'app'
-app.textContent = '사무실 준비 중'
+createGame(app, () => {
+  app.dataset.scene = 'office'
+})
+mountHud(app)
