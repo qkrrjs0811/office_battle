@@ -35,7 +35,7 @@ export type Fight = {
 const damageOf = (attack: number, defense: number) => Math.max(COMBAT.minDamage, attack - defense)
 
 // 시드가 같으면 같은 전투가 나오도록 직접 만든 난수(mulberry32)
-const nextRandom = (state: number): { value: number; state: number } => {
+export const nextRandom = (state: number): { value: number; state: number } => {
   const next = (state + 0x6d2b79f5) | 0
   let mixed = Math.imul(next ^ (next >>> 15), 1 | next)
   mixed = (mixed + Math.imul(mixed ^ (mixed >>> 7), 61 | mixed)) ^ mixed
