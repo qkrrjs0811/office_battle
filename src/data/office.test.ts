@@ -3,7 +3,10 @@ import { project } from '../core/iso'
 import { findBrokenLinks, findUnreachable } from '../core/travel'
 import { DESK_SET, PORTAL_SIZE, type Furniture } from './furniture'
 import { MAPS, START_MAP } from './maps'
-import { FLOOR_COLORS, MIN_MAP_SIDE, SCREEN, TILE, buildFloorCells, floorKindAt, mapTitle, type Rect } from './office'
+import { FLOOR_COLORS, MIN_MAP_SIDE, SCREEN, TILE, buildFloorCells, fitMap, floorKindAt, mapTitle, type Rect } from './office'
+
+// 가장 큰 맵을 맞춘 화면에서 책상 한 세트가 차지하는 폭의 아래 한계(px)
+const MIN_DESK_ON_SCREEN = 90
 import { RANKS } from './ranks'
 
 const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.d && b.y < a.y + a.d
@@ -126,10 +129,22 @@ describe.each(MAPS)('$name 배치', (map) => {
     expect(map.width * map.depth).toBeGreaterThan(288)
   })
 
-  it('맵이 화면보다 넓어 끌어서 둘러본다', () => {
-    const points = buildFloorCells(map).map((c) => project({ x: c.x, y: c.y, z: 0 }, TILE))
-    const width = Math.max(...points.map((p) => p.x)) - Math.min(...points.map((p) => p.x))
-    expect(width).toBeGreaterThan(SCREEN.width)
+  it('맵 전체가 끌지 않아도 화면 안에 들어온다', () => {
+    const { place } = fitMap(map)
+    const points = [
+      ...buildFloorCells(map).map((c) => project({ x: c.x, y: c.y, z: 0 }, TILE)),
+      ...map.furniture.flatMap((item) => item.blocks).map((b) => project({ x: b.x, y: b.y, z: b.z + b.h }, TILE)),
+    ].map(place)
+    for (const p of points) {
+      expect(p.x).toBeGreaterThanOrEqual(0)
+      expect(p.x).toBeLessThanOrEqual(SCREEN.width)
+      expect(p.y).toBeGreaterThanOrEqual(0)
+      expect(p.y).toBeLessThanOrEqual(SCREEN.height)
+    }
+  })
+
+  it('맵 전체를 맞춰도 책상 한 세트가 알아볼 크기로 보인다', () => {
+    expect((DESK_SET.w + DESK_SET.d) * TILE.halfWidth * fitMap(map).scale).toBeGreaterThanOrEqual(MIN_DESK_ON_SCREEN)
   })
 
   it('바닥은 사무실 재질뿐이고 잔디 같은 바깥 땅이 없다', () => {
@@ -165,11 +180,5 @@ describe.each(MAPS)('$name 배치', (map) => {
   it('같은 재질 안에서도 칸마다 색이 조금씩 다르다', () => {
     const cells = buildFloorCells(map).filter((c) => c.kind === map.floor)
     expect(new Set(cells.map((c) => c.color)).size).toBeGreaterThan(5)
-  })
-})
-
-describe('가구 크기', () => {
-  it('책상 한 세트가 화면 폭의 1/4 이상으로 보인다', () => {
-    expect((DESK_SET.w + DESK_SET.d) * TILE.halfWidth).toBeGreaterThanOrEqual(SCREEN.width / 4)
   })
 })

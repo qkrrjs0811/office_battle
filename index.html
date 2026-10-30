@@ -13,10 +13,13 @@
         overflow: hidden;
       }
       #app {
-        position: relative;
-        width: min(100vw, calc(100dvh * 390 / 844));
-        height: 100dvh;
-        margin: 0 auto;
+        /* 안쪽 배치는 언제나 이 크기다. 창에 맞추는 배율은 fitStage가 넣는다 */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 1280px;
+        height: 720px;
+        transform: translate(-50%, -50%) scale(var(--stage-scale, 1));
         overflow: hidden;
       }
       canvas {
@@ -112,11 +115,11 @@
         white-space: nowrap;
       }
       .menu-bar {
+        /* 맵은 마름모꼴이라 오른쪽 아래 구석이 비어 있다 */
         position: absolute;
-        /* 맨 아래 띠는 맵을 끄는 빈 곳으로 남긴다 */
-        bottom: 60px;
-        left: 10px;
-        right: 10px;
+        bottom: 14px;
+        right: 14px;
+        width: 440px;
         display: flex;
         gap: 8px;
         pointer-events: none;
@@ -152,15 +155,15 @@
       }
       .sheet {
         position: absolute;
-        left: 0;
+        top: 0;
         right: 0;
         bottom: 0;
-        height: 66%;
+        width: 440px;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
         padding: 12px;
-        border-radius: 16px 16px 0 0;
+        border-radius: 16px 0 0 16px;
         background: #f4f1e8;
         color: #2f3640;
         font: 13px/1.35 sans-serif;
@@ -296,9 +299,9 @@
       }
       .fight-top,
       .fight-bottom {
+        /* 싸움터는 마름모꼴이라 왼쪽 두 구석이 비어 있다 */
         position: absolute;
-        left: 10px;
-        right: 10px;
+        left: 14px;
         padding: 10px;
         box-sizing: border-box;
         border: 2px solid #c9d2db;
@@ -307,10 +310,12 @@
         pointer-events: none;
       }
       .fight-top {
-        top: 10px;
+        top: 14px;
+        width: 360px;
       }
       .fight-bottom {
-        bottom: 16px;
+        bottom: 14px;
+        width: 420px;
       }
       .fight-heading {
         display: flex;
@@ -333,7 +338,7 @@
       }
       .fight-warning {
         position: absolute;
-        top: 100px;
+        top: 14px;
         left: 50%;
         transform: translateX(-50%);
         padding: 8px 16px;

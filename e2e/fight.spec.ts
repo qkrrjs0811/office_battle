@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
-const SCREEN = { width: 390, height: 844 }
-const CENTER = { x: 195, y: 420 }
+const SCREEN = { width: 1280, height: 720 }
+const CENTER = { x: 640, y: 360 }
 
 const openWith = async (page: Page, seed: Record<string, unknown> = {}) => {
   await page.addInitScript((value) => {
@@ -26,10 +26,10 @@ const swipe = async (page: Page) => {
 }
 
 // 컴퓨터가 밀려도 제때 조작하도록 전투를 5배 느리게 돌린다. 시간 차이를 검사하는 테스트에서 쓴다.
-const slowFights = (page: Page) =>
-  page.addInitScript(() => {
-    ;(window as unknown as { __fightTimeScale: number }).__fightTimeScale = 0.2
-  })
+const slowFights = (page: Page, scale = 0.2) =>
+  page.addInitScript((value) => {
+    ;(window as unknown as { __fightTimeScale: number }).__fightTimeScale = value
+  }, scale)
 
 // 공격까지 남은 게임 시간을 화면 안에서 프레임마다 본다
 const waitForHitWithin = (page: Page, ms: number) =>
@@ -98,7 +98,9 @@ test('화면을 누르면 서류가 날아가 상대 체력이 깎이고, 쿨타
 })
 
 test('적이 준비 동작을 할 때 밀면 공격을 피하고 체력이 그대로다', async ({ page }) => {
-  await slowFights(page)
+  // 넓은 화면을 동시에 그리면 밀기가 2초 넘게 늦기도 한다. 준비 동작 안에 들어가도록 10배 느리게 돌린다
+  test.setTimeout(120_000)
+  await slowFights(page, 0.1)
   await openWith(page)
   await enterFight(page)
   await waitForHitWithin(page, 450)
@@ -106,10 +108,21 @@ test('적이 준비 동작을 할 때 밀면 공격을 피하고 체력이 그�
   await page.screenshot({ path: 'test-results/screens/fight-windup.png' })
   // 돌진은 500ms, 준비 동작은 700ms라 너무 일찍 밀면 돌진이 먼저 끝난다
   await waitForHitWithin(page, 400)
+  // 다음 공격이 오기 전에 값을 읽도록, 피한 바로 그 프레임의 체력을 화면 안에서 잡는다
+  const hpWhenDodged = page.evaluate(
+    () =>
+      new Promise<(string | null)[]>((done) => {
+        const text = (id: string) => document.querySelector(`[data-testid="${id}"]`)!.textContent
+        const look = () => {
+          if (document.querySelector<HTMLElement>('[data-testid="fight"]')!.dataset.dodged === '1') {
+            done([text('fight-player-hp'), text('fight-enemy-hp')])
+          } else requestAnimationFrame(look)
+        }
+        look()
+      }),
+  )
   await swipe(page)
-  await expect(page.getByTestId('fight')).toHaveAttribute('data-dodged', '1', { timeout: 15_000 })
-  await expect(page.getByTestId('fight-player-hp')).toHaveText('체력 100/100')
-  await expect(page.getByTestId('fight-enemy-hp')).toHaveText('체력 30/30')
+  expect(await hpWhenDodged).toEqual(['체력 100/100', '체력 30/30'])
 })
 
 test('야근 버프를 켜면 서류 피해가 커진다', async ({ page }) => {
@@ -123,7 +136,6 @@ test('야근 버프를 켜면 서류 피해가 커진다', async ({ page }) => {
 
 test('직원을 이기면 번 것이 보이고, 사무실로 돌아오면 맵과 값이 이어진다', async ({ page }) => {
   await openWith(page, { stats: { hp: 1000, attack: 40, defense: 2 } })
-  const before = await page.getByTestId('app').getAttribute('data-camera')
   await enterFight(page)
   await tapUntilEnd(page)
   await expect(page.getByTestId('fight')).toHaveAttribute('data-result', 'won')
@@ -136,17 +148,13 @@ test('직원을 이기면 번 것이 보이고, 사무실로 돌아오면 맵과
   await expect(page.getByTestId('profile')).toBeVisible()
   await expect(page.getByTestId('menu-fight-note')).toHaveText('직원 1/3')
   await expect(page.getByTestId('wallet-money')).toHaveText('월급 10')
-  await expect(page.getByTestId('app')).toHaveAttribute('data-camera', before!)
   await expect(page.getByTestId('map-name')).toHaveText('1층 업무 구역')
   await page.waitForTimeout(100)
   await page.screenshot({ path: 'test-results/screens/fight-back-to-office.png' })
 
-  // 돌아온 뒤에도 맵을 끌 수 있다
-  await page.mouse.move(195, 800)
-  await page.mouse.down()
-  await page.mouse.move(135, 800, { steps: 4 })
-  await page.mouse.up()
-  await expect(page.getByTestId('app')).not.toHaveAttribute('data-camera', before!)
+  // 돌아온 뒤에도 포탈로 이동할 수 있다
+  await page.getByTestId('portal-meeting').click()
+  await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'meeting')
 })
 
 test('지면 층 처음으로 돌아가지만 번 것은 남는다', async ({ page }) => {

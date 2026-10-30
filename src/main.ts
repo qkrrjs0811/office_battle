@@ -5,11 +5,13 @@ import { buildProfile } from './core/profile'
 import { nextOpponent } from './core/run'
 import { createGame } from './game/createGame'
 import { mountFight } from './ui/fight'
+import { fitStage } from './ui/fitStage'
 import { mountHud } from './ui/hud'
 import { mountMenu } from './ui/menu'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.dataset.testid = 'app'
+fitStage(app)
 
 // e2e가 돈이 있는 상태에서 시작할 때만 쓴다. 저장 기능이 생기면 저장값으로 대신한다.
 const seed = (window as unknown as { __careerSeed?: Partial<Career> }).__careerSeed
@@ -64,9 +66,5 @@ const game = createGame(app, {
   onMapReady: (map) => {
     app.dataset.scene = 'office'
     app.dataset.map = map.id
-  },
-  onCameraMove: (x, y) => {
-    app.dataset.camera = `${Math.round(x)},${Math.round(y)}`
-    hud.moveCamera(x, y)
   },
 })

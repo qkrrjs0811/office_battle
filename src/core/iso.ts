@@ -6,6 +6,23 @@ export type Point2 = { x: number; y: number }
 // x·y는 바닥 칸, z는 높이. w는 x 방향, d는 y 방향, h는 높이 방향 크기다.
 export type Block = Point3 & { w: number; d: number; h: number; color: number; alpha?: number }
 
+// 모든 점이 여백 안쪽에 들어오도록 줄이거나 늘려 화면 가운데에 놓는다.
+export function fitInto(points: Point2[], screen: { width: number; height: number }, margin: number) {
+  const xs = points.map((p) => p.x)
+  const ys = points.map((p) => p.y)
+  const left = Math.min(...xs)
+  const top = Math.min(...ys)
+  const width = Math.max(...xs) - left
+  const height = Math.max(...ys) - top
+  const scale = Math.min((screen.width - margin * 2) / width, (screen.height - margin * 2) / height)
+  const startX = (screen.width - width * scale) / 2
+  const startY = (screen.height - height * scale) / 2
+  return {
+    scale,
+    place: (p: Point2): Point2 => ({ x: startX + (p.x - left) * scale, y: startY + (p.y - top) * scale }),
+  }
+}
+
 const LEFT_SHADE = 0.8
 const RIGHT_SHADE = 0.62
 

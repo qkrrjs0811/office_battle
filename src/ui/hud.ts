@@ -1,5 +1,5 @@
 import type { Gauge, Profile } from '../core/profile'
-import { SCREEN, mapTitle, type GameMap, type MapId } from '../data/office'
+import { mapTitle, type GameMap, type MapId } from '../data/office'
 import type { PortalSign } from '../game/OfficeScene'
 import { createPortrait } from './portrait'
 import { onPress } from './press'
@@ -95,38 +95,18 @@ export function mountHud(parent: HTMLElement, profile: Profile, onTravel: (to: M
   parent.append(signLayer, panel, corner)
   showProfile(profile)
 
-  let signs: { sign: PortalSign; button: HTMLButtonElement }[] = []
-  let cameraX = 0
-  let cameraY = 0
-
-  // 이름표는 맵 위 지점을 따라다닌다. 캔버스가 줄어들면 위치도 같은 비율로 줄인다.
-  const placeSigns = () => {
-    const canvas = parent.querySelector('canvas')
-    if (!canvas) return
-    const box = canvas.getBoundingClientRect()
-    const home = parent.getBoundingClientRect()
-    const scale = box.width / SCREEN.width
-    for (const { sign, button } of signs) {
-      button.style.left = `${box.left - home.left + (sign.x - cameraX) * scale}px`
-      button.style.top = `${box.top - home.top + (sign.y - cameraY) * scale}px`
-    }
-  }
-
-  window.addEventListener('resize', placeSigns)
-
   return {
     showProfile,
-    showMap(map: GameMap, nextSigns: PortalSign[]) {
+    showMap(map: GameMap, signs: PortalSign[]) {
       mapName.textContent = mapTitle(map)
-      signLayer.replaceChildren()
-      signs = nextSigns.map((sign) => ({ sign, button: portalButton(sign, onTravel) }))
-      signLayer.append(...signs.map((s) => s.button))
-      placeSigns()
-    },
-    moveCamera(x: number, y: number) {
-      cameraX = x
-      cameraY = y
-      placeSigns()
+      signLayer.replaceChildren(
+        ...signs.map((sign) => {
+          const button = portalButton(sign, onTravel)
+          button.style.left = `${sign.x}px`
+          button.style.top = `${sign.y}px`
+          return button
+        }),
+      )
     },
   }
 }

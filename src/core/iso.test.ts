@@ -1,5 +1,32 @@
 import { describe, expect, it } from 'vitest'
-import { blockFaces, faceColors, project, sortBlocks, type Block, type Tile } from './iso'
+import { blockFaces, faceColors, fitInto, project, sortBlocks, type Block, type Tile } from './iso'
+
+describe('화면에 맞추기', () => {
+  const screen = { width: 1000, height: 500 }
+
+  it('가장 먼 점들이 여백 안쪽에 들어오고 가운데에 놓인다', () => {
+    const points = [{ x: -100, y: 0 }, { x: 300, y: 100 }]
+    const fit = fitInto(points, screen, 10)
+    const a = fit.place(points[0])
+    const b = fit.place(points[1])
+    expect(fit.scale).toBeCloseTo(980 / 400)
+    expect(a.x).toBeCloseTo(10)
+    expect(b.x).toBeCloseTo(990)
+    expect((a.y + b.y) / 2).toBeCloseTo(250)
+  })
+
+  it('세로가 더 빠듯하면 세로에 맞춘다', () => {
+    const points = [{ x: 0, y: 0 }, { x: 100, y: 960 }]
+    const fit = fitInto(points, screen, 10)
+    expect(fit.scale).toBeCloseTo(480 / 960)
+    expect(fit.place(points[1]).y).toBeCloseTo(490)
+    expect((fit.place(points[0]).x + fit.place(points[1]).x) / 2).toBeCloseTo(500)
+  })
+
+  it('맵이 화면보다 작으면 크게 늘린다', () => {
+    expect(fitInto([{ x: 0, y: 0 }, { x: 99.8, y: 40 }], screen, 1).scale).toBeCloseTo(10)
+  })
+})
 
 const tile: Tile = { halfWidth: 20, halfHeight: 10, zUnit: 20 }
 const box = (x: number, y: number, z = 0, w = 1, d = 1, h = 1): Block => ({ x, y, z, w, d, h, color: 0x808080 })

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
-const SCREEN = { width: 390, height: 844 }
+const SCREEN = { width: 1280, height: 720 }
 
 const openWith = async (page: Page, seed: Record<string, unknown> = {}) => {
   await page.addInitScript((value) => {
@@ -56,15 +56,7 @@ test('회사 정문에 들르면 퀘스트가 깨지고, 보상을 받으면 레
   await expect(page.getByTestId('sheet')).toBeHidden()
 
   // 처음 뜬 맵이 아니라 포탈로 들어가야 들른 것이다
-  const portal = page.getByTestId('portal-gate')
-  const box = (await portal.boundingBox())!
-  const dx = SCREEN.width / 2 - (box.x + box.width / 2)
-  const reach = Math.max(-190, Math.min(190, dx))
-  await page.mouse.move(195, 800)
-  await page.mouse.down()
-  await page.mouse.move(195 + reach, 800, { steps: 8 })
-  await page.mouse.up()
-  await portal.click()
+  await page.getByTestId('portal-gate').click()
   await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'gate')
   await expect(page.getByTestId('quest-badge')).toHaveText('1')
   await page.screenshot({ path: 'test-results/screens/menu-badge.png' })

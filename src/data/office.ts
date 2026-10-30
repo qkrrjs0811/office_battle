@@ -1,9 +1,12 @@
-// 맵을 그리는 공통 수치와 바닥 계산. 게임 화면은 폰 세로 크기를 기준으로 그린다.
+// 맵을 그리는 공통 수치와 바닥 계산. 게임 화면은 가로 16:9를 기준으로 그리고 창 크기에 맞춰 통째로 줄인다.
 // 맵 하나하나의 배치는 maps.ts에 있다.
-import type { Tile } from '../core/iso'
-import type { Furniture } from './furniture'
+import { fitInto, project, type Tile } from '../core/iso'
+import { PORTAL_SIZE, type Furniture } from './furniture'
 
-export const SCREEN = { width: 390, height: 844 }
+export const SCREEN = { width: 1280, height: 720 }
+
+// 맵 전체를 화면에 맞출 때 가장자리에 남기는 여백
+export const MAP_MARGIN = 30
 
 export const TILE: Tile = { halfWidth: 22, halfHeight: 11, zUnit: 22 }
 
@@ -69,9 +72,6 @@ export const SIDE_LAYERS = [
 // 포탈을 지나면 이 색으로 잠깐 번쩍이며 다음 맵이 나타난다.
 export const TRAVEL_FADE = { ms: 180, red: 255, green: 255, blue: 255 }
 
-// 도착했을 때 포탈이 화면 안에 들어오면서 방도 보이도록, 카메라를 포탈에서 방 가운데 쪽으로 이만큼 옮긴다.
-export const ARRIVAL_ROOM_PULL = 0.35
-
 // 포탈 이름표를 포탈 위 이 높이에 띄운다.
 export const PORTAL_SIGN_Z = 3.5
 
@@ -79,6 +79,25 @@ export function portalCenter(portal: Portal, span: number, depth: number) {
   return portal.alongX
     ? { x: portal.x + span / 2, y: portal.y + depth / 2 }
     : { x: portal.x + depth / 2, y: portal.y + span / 2 }
+}
+
+// 바닥과 옆면, 층 그림자, 가구, 포탈 이름표가 모두 화면에 들어오는 배율과 위치
+export function fitMap(map: GameMap) {
+  const floorBottom = ISLAND_SHADOW.offsetY * 2
+  const points = [
+    ...buildFloorCells(map).flatMap((c) => {
+      const front = project({ x: c.x + 1, y: c.y + 1, z: 0 }, TILE)
+      return [
+        project({ x: c.x, y: c.y, z: 0 }, TILE),
+        project({ x: c.x + 1, y: c.y, z: 0 }, TILE),
+        project({ x: c.x, y: c.y + 1, z: 0 }, TILE),
+        { x: front.x, y: front.y + floorBottom },
+      ]
+    }),
+    ...map.furniture.flatMap((item) => item.blocks).map((b) => project({ x: b.x, y: b.y, z: b.z + b.h }, TILE)),
+    ...map.portals.map((p) => project({ ...portalCenter(p, PORTAL_SIZE.span, PORTAL_SIZE.depth), z: PORTAL_SIGN_Z }, TILE)),
+  ]
+  return fitInto(points, SCREEN, MAP_MARGIN)
 }
 
 export type FloorCell = { x: number; y: number; kind: FloorKind; color: number; sideJitter: number }

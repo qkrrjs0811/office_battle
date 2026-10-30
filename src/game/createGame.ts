@@ -14,7 +14,6 @@ export function createGame(parent: HTMLElement, events: SceneEvents) {
     width: SCREEN.width,
     height: SCREEN.height,
     antialias: true,
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     banner: false,
     scene: [office, fight],
   })

@@ -1,23 +1,9 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 
-const SCREEN = { width: 390, height: 844 }
+const SCREEN = { width: 1280, height: 720 }
 
 const nextFrames = (page: Page) =>
   page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))))
-
-const camera = async (page: Page) => {
-  const value = await page.getByTestId('app').getAttribute('data-camera')
-  const [x, y] = value!.split(',').map(Number)
-  return { x, y }
-}
-
-const drag = async (page: Page, from: [number, number], to: [number, number]) => {
-  await page.mouse.move(...from)
-  await page.mouse.down()
-  await page.mouse.move(...to, { steps: 8 })
-  await page.mouse.up()
-  await nextFrames(page)
-}
 
 const openMap = async (page: Page) => {
   await page.goto('/')
@@ -40,32 +26,9 @@ const expectApart = (a: Box, b: Box) => {
   expect(overlap).toBe(false)
 }
 
-// 맵을 끌어 이름표를 화면 가운데로 데려온다. 빈 곳(화면 아래쪽)에서 잡아 끈다.
-const bringIntoView = async (page: Page, button: Locator) => {
-  for (let i = 0; i < 4; i++) {
-    const box = (await button.boundingBox())!
-    const dx = SCREEN.width / 2 - (box.x + box.width / 2)
-    if (Math.abs(dx) < 60) return
-    const reach = Math.max(-150, Math.min(150, dx))
-    await drag(page, [195, 800], [195 + reach, 800])
-  }
-}
-
-test('폰 크기 화면에 블록 사무실 맵이 그려진다', async ({ page }) => {
-  await openMap(page)
-  await expect(page.getByTestId('map-name')).toHaveText('1층 업무 구역')
-
-  // 화면 맞춤 계산에서 1px 미만의 소수점 오차가 난다
-  const canvas = (await page.locator('canvas').boundingBox())!
-  expect(canvas.x).toBeCloseTo(0, 0)
-  expect(canvas.y).toBeCloseTo(0, 0)
-  expect(canvas.width).toBeCloseTo(390, 0)
-  expect(canvas.height).toBeCloseTo(844, 0)
-
-  const shot = await page.screenshot({ path: 'test-results/screens/office.png' })
-
-  // 캔버스가 비어 있으면 색이 한두 개뿐이다. 바닥·벽·가구 색이 실제로 찍혔는지 본다.
-  const colors = await page.evaluate(async (base64) => {
+// 찍은 화면의 색 가짓수. 맵이 그려졌는지 본다
+const countColors = (page: Page, shot: Buffer) =>
+  page.evaluate(async (base64) => {
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
     const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' }))
     const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d')!
@@ -75,8 +38,59 @@ test('폰 크기 화면에 블록 사무실 맵이 그려진다', async ({ page 
     for (let i = 0; i < data.length; i += 4) seen.add((data[i] << 16) | (data[i + 1] << 8) | data[i + 2])
     return seen.size
   }, shot.toString('base64'))
-  expect(colors).toBeGreaterThan(30)
+
+// 화면 네 가장자리가 바탕색 한 가지면 맵이 어느 쪽으로도 잘리지 않은 것이다
+const expectMapNotCut = async (page: Page) => {
+  const edges = [
+    { x: 0, y: 0, width: SCREEN.width, height: 2 },
+    { x: 0, y: SCREEN.height - 2, width: SCREEN.width, height: 2 },
+    { x: 0, y: 0, width: 2, height: SCREEN.height },
+    { x: SCREEN.width - 2, y: 0, width: 2, height: SCREEN.height },
+  ]
+  for (const clip of edges) expect(await countColors(page, await page.screenshot({ clip }))).toBe(1)
+}
+
+test('가로 화면에 블록 사무실 맵 전체가 그려진다', async ({ page }) => {
+  await openMap(page)
+  await expect(page.getByTestId('map-name')).toHaveText('1층 업무 구역')
+
+  const canvas = (await page.locator('canvas').boundingBox())!
+  expect(canvas.x).toBeCloseTo(0, 0)
+  expect(canvas.y).toBeCloseTo(0, 0)
+  expect(canvas.width).toBeCloseTo(SCREEN.width, 0)
+  expect(canvas.height).toBeCloseTo(SCREEN.height, 0)
+
+  const shot = await page.screenshot({ path: 'test-results/screens/office.png' })
+  // 캔버스가 비어 있으면 색이 한두 개뿐이다. 바닥·벽·가구 색이 실제로 찍혔는지 본다.
+  expect(await countColors(page, shot)).toBeGreaterThan(30)
+  await expectMapNotCut(page)
 })
+
+for (const size of [
+  { width: 640, height: 360 },
+  { width: 1920, height: 1080 },
+  { width: 1000, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`창이 ${size.width}×${size.height}이어도 화면 전체가 창 안에 들어오고 포탈을 누를 수 있다`, async ({ page }) => {
+    await page.setViewportSize(size)
+    await openMap(page)
+    const canvas = (await page.locator('canvas').boundingBox())!
+    expect(canvas.x).toBeGreaterThanOrEqual(-1)
+    expect(canvas.y).toBeGreaterThanOrEqual(-1)
+    expect(canvas.x + canvas.width).toBeLessThanOrEqual(size.width + 1)
+    expect(canvas.y + canvas.height).toBeLessThanOrEqual(size.height + 1)
+    expect(canvas.width / canvas.height).toBeCloseTo(SCREEN.width / SCREEN.height, 1)
+    await page.screenshot({ path: `test-results/screens/window-${size.width}x${size.height}.png` })
+
+    // 줄어든 화면에서도 프로필의 비율이 그대로이고 이름표가 눌린다
+    const scale = canvas.width / SCREEN.width
+    const profile = (await page.getByTestId('profile').boundingBox())!
+    expect(profile.width).toBeCloseTo(196 * scale, 0)
+    await page.getByTestId('portal-meeting').click()
+    await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'meeting')
+  })
+}
 
 test('왼쪽 위 프로필에 얼굴, 직급, 레벨, HP, MP가 보이고 맵 이름과 나뉘어 있다', async ({ page }) => {
   await openMap(page)
@@ -103,38 +117,19 @@ test('왼쪽 위 프로필에 얼굴, 직급, 레벨, HP, MP가 보이고 맵 �
   )
   expect(overflowing).toEqual([])
 
-  // 프로필 위를 끌어도 맵이 움직인다
-  const start = await camera(page)
-  const y = profile.y + profile.height / 2
-  await drag(page, [profile.x + 100, y], [profile.x + 40, y])
-  expect((await camera(page)).x).toBe(start.x + 60)
-
-  await page.screenshot({ path: 'test-results/screens/profile.png', clip: { x: 0, y: 0, width: SCREEN.width, height: 110 } })
+  await page.screenshot({ path: 'test-results/screens/profile.png', clip: { x: 0, y: 0, width: 400, height: 110 } })
 })
 
-test('끌어서 맵의 다른 곳을 둘러보고, 맵 끝 밖으로는 나가지 않는다', async ({ page }) => {
-  await openMap(page)
-
-  const start = await camera(page)
-  await drag(page, [195, 800], [95, 800])
-  expect((await camera(page)).x).toBe(start.x + 100)
-  await page.screenshot({ path: 'test-results/screens/office-right.png' })
-
-  for (let i = 0; i < 6; i++) await drag(page, [40, 800], [380, 800])
-  const corner = await camera(page)
-  expect(corner.x).toBe(0)
-  expect(corner.y).toBeGreaterThanOrEqual(0)
-  await page.screenshot({ path: 'test-results/screens/office-left.png' })
-})
-
-test('포탈 이름표를 지나가며 끌어도 맵이 끊기지 않고, 이동하지도 않는다', async ({ page }) => {
+test('포탈 이름표를 지나가며 끌어도 이동하지 않는다', async ({ page }) => {
   await openMap(page)
   const box = (await page.getByTestId('portal-meeting').boundingBox())!
   const y = box.y + box.height / 2
   const startX = box.x + box.width + 40
-  const start = await camera(page)
-  await drag(page, [startX, y], [startX - 120, y])
-  expect((await camera(page)).x).toBe(start.x + 120)
+  await page.mouse.move(startX, y)
+  await page.mouse.down()
+  await page.mouse.move(box.x - 40, y, { steps: 8 })
+  await page.mouse.up()
+  await nextFrames(page)
   await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'work')
 })
 
@@ -149,9 +144,9 @@ test('이름표에서 누른 뒤 밖에서 떼면 이동하지 않는다', async
   await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'work')
 })
 
-test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 온다', async ({ page }) => {
-  // 맵마다 끌기와 스크린샷을 여러 번 하므로 일곱 곳을 돌면 기본 제한 60초에 닿는다
-  test.setTimeout(120_000)
+test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 오고, 어느 맵이든 전체가 끌지 않아도 보인다', async ({ page }) => {
+  // 맵마다 스크린샷을 여러 번 찍으므로 일곱 곳을 돌면 기본 제한 60초에 닿는다
+  test.setTimeout(180_000)
   await openMap(page)
   const route = [
     ['meeting', '회의실', 'work'],
@@ -166,8 +161,6 @@ test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 온다', async 
   const backgrounds = new Set<string>()
   for (const [to, name, back] of route) {
     const portal = page.getByTestId(`portal-${to}`)
-    await bringIntoView(page, portal)
-    await page.screenshot({ path: `test-results/screens/portal-to-${to}.png` })
     const box = (await portal.boundingBox())!
     expect(box.height).toBeGreaterThanOrEqual(44)
     expect(box.width).toBeGreaterThanOrEqual(44)
@@ -176,28 +169,27 @@ test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 온다', async 
     await expect(page.getByTestId('app')).toHaveAttribute('data-map', to)
     await expect(page.getByTestId('map-name')).toHaveText(`1층 ${name}`)
     await nextFrames(page)
+    await expect(page.getByTestId(`portal-${back}`)).toBeVisible()
 
-    // 도착하면 돌아가는 포탈이 끌지 않아도 화면 안에 있고, 프로필과 맵 이름에 가려지지 않는다
-    const backPortal = page.getByTestId(`portal-${back}`)
-    await expectFullyOnScreen(backPortal)
-    const backBox = (await backPortal.boundingBox())!
-    expectApart(backBox, (await page.getByTestId('profile').boundingBox())!)
-    expectApart(backBox, (await page.getByTestId('map-name').boundingBox())!)
-    expectApart(backBox, (await page.getByTestId('wallet').boundingBox())!)
-    expectApart(backBox, (await page.getByTestId('menu-fight').boundingBox())!)
-    expectApart(backBox, (await page.getByTestId('menu-quest').boundingBox())!)
-    expectApart(backBox, (await page.getByTestId('menu-train').boundingBox())!)
+    // 포탈 이름표는 모두 화면 안에 있고 다른 칸에 가려지지 않는다
+    const hud = await Promise.all(
+      ['profile', 'map-name', 'wallet', 'menu-fight', 'menu-quest', 'menu-shop', 'menu-train'].map(
+        async (id) => (await page.getByTestId(id).boundingBox())!,
+      ),
+    )
+    const signs = await page.locator('.portal-sign').all()
+    expect(signs).toHaveLength(2)
+    for (const sign of signs) {
+      await expectFullyOnScreen(sign)
+      const signBox = (await sign.boundingBox())!
+      for (const other of hud) expectApart(signBox, other)
+    }
     await page.screenshot({ path: `test-results/screens/map-${to}.png` })
+    await expectMapNotCut(page)
 
     // 맵마다 바탕색이 다르다. 빈 구석 한 점으로 확인한다
     const shot = await page.screenshot({ clip: { x: 0, y: SCREEN.height - 2, width: 2, height: 2 } })
     backgrounds.add(shot.toString('base64'))
-
-    // 다시 시작한 장면에서 끌기가 두 번 먹지 않는다
-    const before = await camera(page)
-    await drag(page, [195, 800], [175, 800])
-    expect(Math.abs((await camera(page)).x - before.x)).toBeLessThanOrEqual(20)
-    await drag(page, [175, 800], [195, 800])
   }
   expect(backgrounds.size).toBe(7)
 })

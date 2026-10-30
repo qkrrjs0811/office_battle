@@ -4,7 +4,6 @@ import { travel } from '../core/travel'
 import { PORTAL_SIZE } from '../data/furniture'
 import { MAPS, START_MAP } from '../data/maps'
 import {
-  ARRIVAL_ROOM_PULL,
   ISLAND_SHADOW,
   OBJECT_SHADOW,
   PORTAL_SIGN_Z,
@@ -13,24 +12,21 @@ import {
   TILE,
   TRAVEL_FADE,
   buildFloorCells,
+  fitMap,
   floorKindAt,
   portalCenter,
   type GameMap,
   type MapId,
-  type Portal,
 } from '../data/office'
-
-const MAP_PADDING = 70
 
 export type PortalSign = { to: MapId; x: number; y: number; accent: number; label: string }
 
 export type SceneEvents = {
   onMapShown: (map: GameMap, signs: PortalSign[]) => void
   onMapReady: (map: GameMap) => void
-  onCameraMove: (x: number, y: number) => void
 }
 
-// 사람이 없는 사무실 맵 한 곳. 블록을 쌓아 한 장으로 구워 두고 카메라로 둘러본다. 규칙은 넣지 않는다.
+// 사람이 없는 사무실 맵 한 곳. 맵 전체가 화면에 들어오도록 줄여 한 장으로 구워 둔다. 규칙은 넣지 않는다.
 export class OfficeScene extends Phaser.Scene {
   private readonly events_: SceneEvents
   private map!: GameMap
@@ -41,12 +37,11 @@ export class OfficeScene extends Phaser.Scene {
     this.events_ = events
   }
 
-  create(data: { mapId?: MapId; arrival?: Portal }) {
+  create(data: { mapId?: MapId; arrived?: boolean }) {
     this.map = MAPS.find((m) => m.id === (data.mapId ?? START_MAP))!
     this.leaving = false
     const blocks = this.map.furniture.flatMap((item) => item.blocks)
-    const bounds = this.measure(blocks)
-    const offset = (p: Point2) => ({ x: p.x - bounds.x, y: p.y - bounds.y })
+    const offset = fitMap(this.map).place
 
     const g = this.make.graphics({}, false)
     this.drawIslandShadow(g, offset)
@@ -54,20 +49,14 @@ export class OfficeScene extends Phaser.Scene {
     this.drawObjectShadows(g, offset)
     sortBlocks(blocks, TILE).forEach((block) => this.drawBlock(g, block, offset))
 
-    this.add.renderTexture(0, 0, bounds.width, bounds.height).setOrigin(0).draw(g)
+    this.add.renderTexture(0, 0, SCREEN.width, SCREEN.height).setOrigin(0).draw(g)
     g.destroy()
 
     const camera = this.cameras.main
     camera.setBackgroundColor(this.map.background)
-    camera.setBounds(0, 0, bounds.width, bounds.height)
-    const start = offset(project({ ...this.startView(data.arrival ?? this.map.portals[0]), z: 0 }, TILE))
-    camera.centerOn(start.x, start.y)
-    this.clampCamera()
-    this.enableDrag()
 
     this.events_.onMapShown(this.map, this.portalSigns(offset))
-    this.events_.onCameraMove(camera.scrollX, camera.scrollY)
-    if (data.arrival) {
+    if (data.arrived) {
       const { ms, red, green, blue } = TRAVEL_FADE
       camera.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => this.events_.onMapReady(this.map))
       camera.fadeIn(ms, red, green, blue)
@@ -79,16 +68,8 @@ export class OfficeScene extends Phaser.Scene {
   travelTo(to: MapId) {
     if (this.leaving) return
     this.leaving = true
-    const { map, arrival } = travel(MAPS, this.map.id, to)
-    this.scene.restart({ mapId: map.id, arrival })
-  }
-
-  private startView(portal: Portal) {
-    const center = portalCenter(portal, PORTAL_SIZE.span, PORTAL_SIZE.depth)
-    return {
-      x: center.x + (this.map.width / 2 - center.x) * ARRIVAL_ROOM_PULL,
-      y: center.y + (this.map.depth / 2 - center.y) * ARRIVAL_ROOM_PULL,
-    }
+    const { map } = travel(MAPS, this.map.id, to)
+    this.scene.restart({ mapId: map.id, arrived: true })
   }
 
   private portalSigns(offset: (p: Point2) => Point2): PortalSign[] {
@@ -102,52 +83,6 @@ export class OfficeScene extends Phaser.Scene {
         ...offset(project({ ...center, z: PORTAL_SIGN_Z }, TILE)),
       }
     })
-  }
-
-  // 카메라 경계는 그리기 직전에 적용되므로, 기록하는 값도 여기서 맞춰 둔다
-  private clampCamera() {
-    const camera = this.cameras.main
-    camera.scrollX = Phaser.Math.Clamp(camera.scrollX, camera.getBounds().x, camera.getBounds().right - camera.width)
-    camera.scrollY = Phaser.Math.Clamp(camera.scrollY, camera.getBounds().y, camera.getBounds().bottom - camera.height)
-  }
-
-  private enableDrag() {
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (!pointer.isDown) return
-      const camera = this.cameras.main
-      camera.scrollX -= pointer.position.x - pointer.prevPosition.x
-      camera.scrollY -= pointer.position.y - pointer.prevPosition.y
-      this.clampCamera()
-      this.events_.onCameraMove(camera.scrollX, camera.scrollY)
-    })
-  }
-
-  // 맵이 화면보다 작은 쪽은 위아래(좌우)로 여백을 붙여 화면 가운데에 놓는다.
-  private measure(blocks: Block[]) {
-    const points = [
-      ...buildFloorCells(this.map).flatMap((c) => [
-        project({ x: c.x, y: c.y, z: 0 }, TILE),
-        project({ x: c.x + 1, y: c.y + 1, z: -2 }, TILE),
-        project({ x: c.x + 1, y: c.y, z: 0 }, TILE),
-        project({ x: c.x, y: c.y + 1, z: 0 }, TILE),
-      ]),
-      ...blocks.map((b) => project({ x: b.x, y: b.y, z: b.z + b.h }, TILE)),
-      ...this.map.portals.map((p) => project({ ...portalCenter(p, PORTAL_SIZE.span, PORTAL_SIZE.depth), z: PORTAL_SIGN_Z }, TILE)),
-    ]
-    const xs = points.map((p) => p.x)
-    const ys = points.map((p) => p.y)
-    const left = Math.floor(Math.min(...xs)) - MAP_PADDING
-    const top = Math.floor(Math.min(...ys)) - MAP_PADDING
-    const contentWidth = Math.ceil(Math.max(...xs)) + MAP_PADDING - left
-    const contentHeight = Math.ceil(Math.max(...ys)) + MAP_PADDING + ISLAND_SHADOW.offsetY - top
-    const extraX = Math.max(0, SCREEN.width - contentWidth)
-    const extraY = Math.max(0, SCREEN.height - contentHeight)
-    return {
-      x: left - Math.floor(extraX / 2),
-      y: top - Math.floor(extraY / 2),
-      width: contentWidth + extraX,
-      height: contentHeight + extraY,
-    }
   }
 
   private fillFace(g: Phaser.GameObjects.Graphics, face: Point2[], color: number, alpha: number, offset: (p: Point2) => Point2) {
