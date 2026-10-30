@@ -32,9 +32,6 @@ export const PALETTE = {
   pot: 0xb8694a,
   leaf: 0x6ea65f,
   leafLight: 0x83b873,
-  trunk: 0x5b4331,
-  bench: 0x8d5f3a,
-  fence: 0x6d5a48,
   execDesk: 0x7a3f22,
   gold: 0xe6b93c,
   rug: 0xa23f3f,
@@ -208,36 +205,6 @@ export function execDesk(x: number, y: number): Furniture {
 
 export function rug(x: number, y: number, w: number, d: number): Furniture {
   return item('양탄자', x, y, w, d, [b(x, y, 0, w, d, 0.04, PALETTE.rug)])
-}
-
-export function tree(x: number, y: number, size = 1): Furniture {
-  const s = size
-  return item('나무', x, y, 1.6 * s, 1.6 * s, [
-    b(x + 0.55 * s, y + 0.55 * s, 0, 0.5 * s, 0.5 * s, 1.2 * s, PALETTE.trunk),
-    b(x, y, 1.2 * s, 1.6 * s, 1.6 * s, 1.1 * s, PALETTE.leaf),
-    b(x + 0.3 * s, y + 0.3 * s, 2.3 * s, 1 * s, 1 * s, 0.9 * s, PALETTE.leafLight),
-  ])
-}
-
-export function bench(x: number, y: number, alongX = true): Furniture {
-  const [w, d] = alongX ? [2, 0.6] : [0.6, 2]
-  const legs = alongX
-    ? [b(x + 0.1, y + 0.1, 0, 0.15, 0.4, 0.3, PALETTE.deskLeg), b(x + 1.75, y + 0.1, 0, 0.15, 0.4, 0.3, PALETTE.deskLeg)]
-    : [b(x + 0.1, y + 0.1, 0, 0.4, 0.15, 0.3, PALETTE.deskLeg), b(x + 0.1, y + 1.75, 0, 0.4, 0.15, 0.3, PALETTE.deskLeg)]
-  return item('벤치', x, y, w, d, [...legs, b(x, y, 0.3, w, d, 0.1, PALETTE.bench)])
-}
-
-// 울타리: 기둥을 한 칸마다 세우고 가로대로 잇는다.
-export function fence(x: number, y: number, length: number, alongX = true): Furniture {
-  const blocks: Block[] = []
-  for (let i = 0; i <= length; i++) {
-    const [px, py] = alongX ? [x + i, y] : [x, y + i]
-    blocks.push(b(px, py, 0, 0.16, 0.16, 0.7, PALETTE.fence))
-  }
-  blocks.push(
-    alongX ? b(x, y + 0.04, 0.45, length, 0.08, 0.1, PALETTE.fence) : b(x + 0.04, y, 0.45, 0.08, length, 0.1, PALETTE.fence),
-  )
-  return item('울타리', x, y, alongX ? length + 0.16 : 0.16, alongX ? 0.16 : length + 0.16, blocks)
 }
 
 const WALL_THICKNESS = 0.3
