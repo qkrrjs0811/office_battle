@@ -270,6 +270,75 @@
         font-size: 12px;
         white-space: nowrap;
       }
+      .floor-plan {
+        /* 맵 아래 빈 곳, 메뉴 버튼 바로 위 */
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        bottom: 76px;
+        height: 170px;
+        border: 2px solid #2f3640;
+        border-radius: 10px;
+        background: #2f3640;
+        font: 700 13px/1.2 sans-serif;
+        pointer-events: none;
+      }
+      .plan-room {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        box-sizing: border-box;
+        border: 3px solid;
+        border-radius: 6px;
+        background: #3b4450;
+        color: #aab4be;
+        white-space: nowrap;
+      }
+      .plan-room.next {
+        color: #fff;
+      }
+      .plan-room.here {
+        background: #f5d76e;
+        color: #2f3640;
+        font-size: 14px;
+      }
+      .plan-here {
+        padding: 1px 6px;
+        border-radius: 6px;
+        background: #d8453e;
+        color: #fff;
+        font-size: 11px;
+      }
+      .plan-door {
+        position: absolute;
+        border-radius: 2px;
+        background: #fff;
+        transform: translate(-50%, -50%);
+      }
+      .plan-door.along-x {
+        width: 20px;
+        height: 6px;
+      }
+      .plan-door.along-y {
+        width: 6px;
+        height: 20px;
+      }
+      .plan-title {
+        position: absolute;
+        left: 33.33%;
+        right: 33.33%;
+        top: 33.33%;
+        bottom: 33.33%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f5d76e;
+        white-space: nowrap;
+      }
+      #app[data-mode='fight'] .floor-plan,
       #app[data-mode='fight'] .portal-layer,
       #app[data-mode='fight'] .profile,
       #app[data-mode='fight'] .corner,

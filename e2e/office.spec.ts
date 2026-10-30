@@ -120,6 +120,49 @@ test('왼쪽 위 프로필에 얼굴, 직급, 레벨, HP, MP가 보이고 맵 �
   await page.screenshot({ path: 'test-results/screens/profile.png', clip: { x: 0, y: 0, width: SCREEN.width, height: 110 } })
 })
 
+test('맵 아래에 1층 구조도가 늘 보이고 내 위치와 갈 수 있는 곳이 표시된다', async ({ page }) => {
+  await openMap(page)
+  await expect(page.getByTestId('plan-title')).toHaveText('1층 구조도')
+  await expect(page.getByTestId('plan-room-work').getByTestId('plan-here')).toHaveText('내 위치')
+  await expect(page.getByTestId('plan-room-meeting')).toHaveText('→ 회의실')
+  await expect(page.getByTestId('plan-room-gate')).toHaveText('→ 회사 정문')
+  await expect(page.getByTestId('plan-room-archive')).toHaveText('자료실')
+
+  // 방 일곱 칸이 판 안에 있고 글자가 칸 밖으로 넘치지 않는다
+  const panel = (await page.getByTestId('floor-plan').boundingBox())!
+  const rooms = await page.locator('.plan-room').all()
+  expect(rooms).toHaveLength(7)
+  for (const room of rooms) {
+    const box = (await room.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(panel.x)
+    expect(box.y).toBeGreaterThanOrEqual(panel.y)
+    expect(box.x + box.width).toBeLessThanOrEqual(panel.x + panel.width)
+    expect(box.y + box.height).toBeLessThanOrEqual(panel.y + panel.height)
+  }
+  const overflowing = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('.plan-room')]
+      .filter((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)
+      .map((el) => el.dataset.testid),
+  )
+  expect(overflowing).toEqual([])
+  await page.screenshot({ path: 'test-results/screens/floor-plan.png' })
+
+  // 구조도는 보기만 하므로 눌러도 움직이지 않는다
+  const meeting = (await page.getByTestId('plan-room-meeting').boundingBox())!
+  await page.mouse.click(meeting.x + meeting.width / 2, meeting.y + meeting.height / 2)
+  await nextFrames(page)
+  await expect(page.getByTestId('app')).toHaveAttribute('data-map', 'work')
+
+  // 메뉴 칸과 전투 화면에서는 구조도가 보이지 않는다
+  await page.getByTestId('menu-quest').click()
+  await page.screenshot({ path: 'test-results/screens/floor-plan-under-sheet.png' })
+  const sheet = (await page.getByTestId('sheet').boundingBox())!
+  expect(sheet.y).toBeLessThanOrEqual(panel.y)
+  await page.getByTestId('sheet-close').click()
+  await page.getByTestId('menu-fight').click()
+  await expect(page.getByTestId('floor-plan')).toBeHidden()
+})
+
 test('포탈 이름표를 지나가며 끌어도 이동하지 않는다', async ({ page }) => {
   await openMap(page)
   const box = (await page.getByTestId('portal-meeting').boundingBox())!
@@ -187,6 +230,18 @@ test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 오고, 어느 
     expectApart((await signs[0].boundingBox())!, (await signs[1].boundingBox())!)
     await page.screenshot({ path: `test-results/screens/map-${to}.png` })
     await expectMapNotCut(page)
+
+    // 구조도에서 내 위치가 지금 맵으로 옮겨 가고, 구조도가 맵과 이름표를 가리지 않는다
+    await expect(page.getByTestId('plan-here')).toHaveCount(1)
+    await expect(page.getByTestId(`plan-room-${to}`).getByTestId('plan-here')).toBeVisible()
+    await expect(page.getByTestId(`plan-room-${back}`)).toContainText(`→`)
+    const plan = (await page.getByTestId('floor-plan').boundingBox())!
+    for (const sign of signs) expectApart((await sign.boundingBox())!, plan)
+    expectApart(plan, (await page.getByTestId('menu-fight').boundingBox())!)
+    // 구조도 바로 위 띠가 바탕색 한 가지면 맵이 구조도 밑으로 들어가지 않은 것이다
+    expect(
+      await countColors(page, await page.screenshot({ clip: { x: 0, y: plan.y - 2, width: SCREEN.width, height: 2 } })),
+    ).toBe(1)
 
     // 맵마다 바탕색이 다르다. 빈 구석 한 점으로 확인한다
     const shot = await page.screenshot({ clip: { x: 0, y: SCREEN.height - 2, width: 2, height: 2 } })

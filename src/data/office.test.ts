@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { buildFloorPlan, findOverlaps } from '../core/floorPlan'
 import { project } from '../core/iso'
 import { findBrokenLinks, findUnreachable } from '../core/travel'
+import { FLOOR_PLAN_ROOMS } from './floorPlan'
 import { DESK_SET, PORTAL_SIZE, type Furniture } from './furniture'
 import { MAPS, START_MAP } from './maps'
 import { FLOOR_COLORS, MIN_MAP_SIDE, PORTAL_SIGN_Z, SCREEN, TILE, buildFloorCells, fitMap, floorKindAt, mapTitle, type Rect } from './office'
@@ -31,6 +33,25 @@ describe('맵 사이의 연결', () => {
       expect(targets.length, map.id).toBeGreaterThanOrEqual(2)
       expect(new Set(targets).size, map.id).toBe(targets.length)
     }
+  })
+})
+
+describe('층 구조도', () => {
+  it('맵마다 방이 하나씩 있고 방끼리 겹치지 않는다', () => {
+    expect(FLOOR_PLAN_ROOMS.map((r) => r.id).sort()).toEqual(MAPS.map((m) => m.id).sort())
+    expect(findOverlaps(FLOOR_PLAN_ROOMS)).toEqual([])
+  })
+
+  it('어느 맵에서든 내 위치가 하나이고, 포탈로 이어진 방은 벽이 맞닿아 문이 있다', () => {
+    for (const map of MAPS) {
+      const plan = buildFloorPlan(FLOOR_PLAN_ROOMS, MAPS, map.id)
+      expect(plan.rooms.filter((r) => r.here).map((r) => r.id)).toEqual([map.id])
+      expect(plan.rooms.filter((r) => r.next).map((r) => r.id).sort()).toEqual(map.portals.map((p) => p.to).sort())
+    }
+  })
+
+  it('포탈의 고리대로 문이 맵 수만큼 있다', () => {
+    expect(buildFloorPlan(FLOOR_PLAN_ROOMS, MAPS, START_MAP).doors).toHaveLength(MAPS.length)
   })
 })
 

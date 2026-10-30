@@ -6,6 +6,7 @@ import { nextOpponent } from './core/run'
 import { createGame } from './game/createGame'
 import { mountFight } from './ui/fight'
 import { fitStage } from './ui/fitStage'
+import { mountFloorPlan } from './ui/floorPlan'
 import { mountHud } from './ui/hud'
 import { mountMenu } from './ui/menu'
 
@@ -24,6 +25,8 @@ const setCareer = (next: Career) => {
 }
 
 const hud = mountHud(app, buildProfile(career), (to) => game.travelTo(to))
+// 메뉴 칸이 구조도를 덮도록 메뉴보다 먼저 붙인다
+const floorPlan = mountFloorPlan(app)
 const menu = mountMenu(app, {
   claim: (questId) => setCareer(claimQuest(career, questId)),
   buy: (itemId) => setCareer(buyItem(career, itemId)),
@@ -60,6 +63,7 @@ const game = createGame(app, {
   onMapShown: (map, signs) => {
     delete app.dataset.map
     hud.showMap(map, signs)
+    floorPlan.show(map)
     if (arrived) setCareer(visitMap(career, map.id))
     arrived = true
   },
