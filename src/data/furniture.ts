@@ -287,13 +287,12 @@ export function paperBin(x: number, y: number): Furniture {
   ])
 }
 
-export const PORTAL_SIZE ={ span: 2.6, depth: 0.6 }
+export const PORTAL_SIZE = { span: 2.6, depth: 0.6, height: 2.6 }
 
 // 벽에 붙여 세우는 포탈. 빛나는 면이 방 안쪽을 보고, 색으로 어디로 가는지 알린다.
 export function portalGate(x: number, y: number, alongX: boolean, glow: number): Furniture {
-  const { span, depth } = PORTAL_SIZE
+  const { span, depth, height } = PORTAL_SIZE
   const post = 0.3
-  const height = 2.6
   const blocks = alongX
     ? [
         b(x, y, 0, post, depth, height, PALETTE.portalFrame),

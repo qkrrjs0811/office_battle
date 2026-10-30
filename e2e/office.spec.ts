@@ -184,6 +184,7 @@ test('포탈로 맵 일곱 곳을 한 바퀴 돌아 제자리로 오고, 어느 
       const signBox = (await sign.boundingBox())!
       for (const other of hud) expectApart(signBox, other)
     }
+    expectApart((await signs[0].boundingBox())!, (await signs[1].boundingBox())!)
     await page.screenshot({ path: `test-results/screens/map-${to}.png` })
     await expectMapNotCut(page)
 

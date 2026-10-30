@@ -3,7 +3,7 @@ import { project } from '../core/iso'
 import { findBrokenLinks, findUnreachable } from '../core/travel'
 import { DESK_SET, PORTAL_SIZE, type Furniture } from './furniture'
 import { MAPS, START_MAP } from './maps'
-import { FLOOR_COLORS, MIN_MAP_SIDE, SCREEN, TILE, buildFloorCells, fitMap, floorKindAt, mapTitle, type Rect } from './office'
+import { FLOOR_COLORS, MIN_MAP_SIDE, PORTAL_SIGN_Z, SCREEN, TILE, buildFloorCells, fitMap, floorKindAt, mapTitle, type Rect } from './office'
 
 // 가장 큰 맵을 맞춘 화면에서 책상 한 세트가 차지하는 폭의 아래 한계(px)
 // 세로 폭 390에 20칸 넘는 맵 전체를 넣으면 90px은 불가능하다. 지금 크기보다 더 작아지지 않게만 막는다
@@ -142,6 +142,10 @@ describe.each(MAPS)('$name 배치', (map) => {
       expect(p.y).toBeGreaterThanOrEqual(0)
       expect(p.y).toBeLessThanOrEqual(SCREEN.height)
     }
+  })
+
+  it('포탈 이름표(높이 44px)가 포탈을 가리지 않는다', () => {
+    expect((PORTAL_SIGN_Z - PORTAL_SIZE.height) * TILE.zUnit * fitMap(map).scale).toBeGreaterThanOrEqual(22)
   })
 
   it('맵 전체를 맞춰도 책상 한 세트가 알아볼 크기로 보인다', () => {

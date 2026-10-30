@@ -73,7 +73,7 @@ export const SIDE_LAYERS = [
 export const TRAVEL_FADE = { ms: 180, red: 255, green: 255, blue: 255 }
 
 // 포탈 이름표를 포탈 위 이 높이에 띄운다.
-export const PORTAL_SIGN_Z = 3.5
+export const PORTAL_SIGN_Z = 6
 
 export function portalCenter(portal: Portal, span: number, depth: number) {
   return portal.alongX
